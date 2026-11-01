@@ -1,0 +1,10 @@
+[
+  { "_id": "p1", "nome": "Kiwi Hayward", "categoria": "Fruta", "preco": 2.4, "unidade": "kg", "biologico": true, "produtor": { "nome": "Horta da Ribeira", "produtor": { "localidade": "Ponte de Lima" } } },
+  { "_id": "p2", "nome": "Mel de urze", "categoria": "Mel", "preco": 7.5, "unidade": "500 g", "biologico": false, "produtor": { "nome": "Mel do Soajo", "produtor": { "localidade": "Arcos de Valdevez" } } },
+  { "_id": "p3", "nome": "Alvarinho 2025", "categoria": "Vinho", "preco": 9.9, "unidade": "garrafa", "biologico": false, "produtor": { "nome": "Quinta da Lameira", "produtor": { "localidade": "Monção" } } },
+  { "_id": "p4", "nome": "Abóbora-menina", "categoria": "Hortícolas", "preco": 1.2, "unidade": "kg", "biologico": false, "produtor": { "nome": "Horta da Ribeira", "produtor": { "localidade": "Ponte de Lima" } } },
+  { "_id": "p5", "nome": "Couve-galega", "categoria": "Hortícolas", "preco": 1.5, "unidade": "molho", "biologico": true, "produtor": { "nome": "Casal do Vez", "produtor": { "localidade": "Arcos de Valdevez" } } },
+  { "_id": "p6", "nome": "Queijo de cabra curado", "categoria": "Queijo", "preco": 6.8, "unidade": "unid.", "biologico": false, "produtor": { "nome": "Queijaria da Peneda", "produtor": { "localidade": "Melgaço" } } },
+  { "_id": "p7", "nome": "Broa de milho", "categoria": "Padaria", "preco": 3.2, "unidade": "unid.", "biologico": false, "produtor": { "nome": "Forno de Lanheses", "produtor": { "localidade": "Viana do Castelo" } } },
+  { "_id": "p8", "nome": "Castanha longal", "categoria": "Outros", "preco": 4.5, "unidade": "kg", "biologico": false, "produtor": { "nome": "Souto da Serra", "produtor": { "localidade": "Paredes de Coura" } } }
+]

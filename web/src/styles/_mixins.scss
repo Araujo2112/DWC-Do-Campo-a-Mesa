@@ -1,0 +1,4 @@
+// Passo 1: mixin Mobile First: estilos base = telemóvel; acrescenta a partir de cada largura
+@mixin a-partir-de($bp) {
+  @media (min-width: map-get($breakpoints, $bp)) { @content; }
+}

@@ -1,0 +1,39 @@
+// Ordem: variáveis -> Bootstrap -> mixins -> parciais da aplicação
+@import 'variables';
+@import 'bootstrap/scss/bootstrap';
+@import 'mixins';
+@import 'catalogo';
+
+.barra-topo { background: #fff; border-bottom: 1px solid $linha; }
+.marca { font-family: Georgia, serif; font-weight: 700; color: $tinta; }
+.texto-secundario { color: $texto-secundario; }
+
+.destaque h1 {
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  @include a-partir-de(lg) { font-size: 3rem; }
+}
+
+.formulario-estreito { max-width: 28rem; margin-inline: auto; }
+
+// Sala de leilão: coluna única no telemóvel, duas colunas a partir de lg
+.sala-leilao {
+  display: grid; gap: 1.5rem;
+  @include a-partir-de(lg) { grid-template-columns: 1fr 22rem; }
+  .valor-atual { font-size: 2.25rem; font-weight: 700; }
+}
+
+.estado-encomenda {
+  display: flex; justify-content: space-between; list-style: none; padding: 0; margin: 0;
+  li { color: $texto-secundario; text-transform: capitalize; }
+  .feito { color: $verde; font-weight: 600; }
+  .atual { color: $terracota; font-weight: 700; }
+}
+
+.por-implementar {
+  border: 2px dashed $terracota;
+  border-radius: $border-radius;
+  padding: 1rem 1.25rem;
+  background: rgba($terracota, .06);
+  margin-bottom: 1rem;
+}

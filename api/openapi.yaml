@@ -1,0 +1,97 @@
+# Passo 5: especificação OpenAPI da API. Validar no Swagger Editor (https://editor.swagger.io).
+# Está documentado apenas o recurso /products como exemplo.
+# TODO: documentar /auth, /producers, /orders, /auctions, /reviews e /admin.
+openapi: 3.0.3
+info:
+  title: Do Campo à Mesa API
+  version: 0.1.0
+  description: API REST do mercado digital de produtores locais.
+servers:
+  - url: http://localhost:3000/api
+paths:
+  /products:
+    get:
+      tags: [Produtos]
+      summary: Pesquisar produtos
+      parameters:
+        - { name: q, in: query, description: Texto no nome, schema: { type: string } }
+        - { name: categoria, in: query, schema: { type: string } }
+        - { name: precoMax, in: query, schema: { type: number } }
+        - { name: bio, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Lista de produtos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Product' }
+    post:
+      tags: [Produtos]
+      summary: Criar produto (produtor)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductInput' }
+      responses:
+        '201': { description: Produto criado }
+        '400': { description: Dados inválidos }
+        '401': { description: Token em falta ou inválido }
+        '403': { description: Utilizador não é produtor }
+  /products/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Produtos]
+      summary: Detalhe de um produto
+      responses:
+        '200':
+          description: Produto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '404': { description: Não encontrado }
+    put:
+      tags: [Produtos]
+      summary: Atualizar produto (produtor dono)
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductInput' }
+      responses:
+        '200': { description: Produto atualizado }
+        '404': { description: Não encontrado }
+    delete:
+      tags: [Produtos]
+      summary: Remover produto (produtor dono)
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '204': { description: Removido }
+        '404': { description: Não encontrado }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    ProductInput:
+      type: object
+      required: [nome, categoria, preco]
+      properties:
+        nome: { type: string, example: Kiwi Hayward }
+        categoria: { type: string, enum: [Hortícolas, Fruta, Mel, Vinho, Queijo, Padaria, Outros] }
+        preco: { type: number, example: 2.4 }
+        unidade: { type: string, example: kg }
+        stock: { type: integer, example: 300 }
+        biologico: { type: boolean }
+        epocas: { type: array, items: { type: string } }
+    Product:
+      allOf:
+        - $ref: '#/components/schemas/ProductInput'
+        - type: object
+          properties:
+            _id: { type: string }
+            produtor: { type: string, description: Id do produtor (ou objeto com populate) }
+            imagemUrl: { type: string }
+    # TODO: User, Order, Auction, Bid, Review, Erro

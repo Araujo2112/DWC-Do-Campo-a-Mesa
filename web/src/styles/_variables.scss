@@ -1,0 +1,19 @@
+// Passo 1: variáveis do tema (redefinem as do Bootstrap antes de o importar)
+$verde: #2F5D3A;
+$verde-escuro: #22452B;
+$terracota: #A94A26;
+$fundo: #F6F2EA;
+$tinta: #1F2A1E;
+$texto-secundario: #5A6354;
+$linha: #E3DACA;
+
+// Variáveis do Bootstrap
+$primary: $verde;
+$success: $verde;
+$body-bg: $fundo;
+$body-color: $tinta;
+$border-radius: .75rem;
+$font-family-sans-serif: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+// Breakpoints próprios (Mobile First)
+$breakpoints: (md: 768px, lg: 1024px, xl: 1280px);
