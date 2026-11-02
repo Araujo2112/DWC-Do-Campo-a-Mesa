@@ -4,9 +4,13 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (...papeis) => (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  const [esquema, token] = (req.headers.authorization || '').split(' ');
+  if (esquema !== 'Bearer' || !token) {
+    return res.status(401).json({ erro: 'Token inválido ou em falta' });
+  }
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET); // { id, papel }
+    // O algoritmo fica fixo: assim um token com "alg: none" ou outro algoritmo é recusado.
+    req.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }); // { id, papel }
   } catch {
     return res.status(401).json({ erro: 'Token inválido ou em falta' });
   }

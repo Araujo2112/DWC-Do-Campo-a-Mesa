@@ -4,18 +4,30 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const limiteLogin = require('../middleware/limiteLogin');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const texto = (v) => typeof v === 'string' && v.trim() !== '';
+
+// O bcrypt só usa os primeiros 72 bytes da password; acima disso recusamos
+// para ninguém julgar que uma password enorme é mais segura.
+const MAX_BYTES_PASSWORD = 72;
 
 // Hash "de enfeite": o login gasta o mesmo tempo quer o email exista ou não
 // (senão o tempo de resposta revelava que emails estão registados).
 const HASH_FALSO = bcrypt.hashSync('enfeite', 12);
 
 // Formato único do utilizador que a API devolve (nunca inclui o hash).
+// O objeto "produtor" só sai para produtores (o Mongoose cria-o vazio para todos).
 const publico = (u) => {
   const o = u.toObject();
-  return { id: o._id, nome: o.nome, email: o.email, papel: o.papel, produtor: o.produtor };
+  return {
+    id: o._id,
+    nome: o.nome,
+    email: o.email,
+    papel: o.papel,
+    produtor: o.papel === 'produtor' ? o.produtor : undefined,
+  };
 };
 
 // POST /api/auth/registo  -> 201 { id }
@@ -28,8 +40,16 @@ router.post('/registo', async (req, res, next) => {
     }
     if (!EMAIL_RE.test(email.trim())) return res.status(400).json({ erro: 'Email inválido' });
     if (password.length < 8) return res.status(400).json({ erro: 'A password tem de ter pelo menos 8 caracteres' });
+    if (Buffer.byteLength(password, 'utf8') > MAX_BYTES_PASSWORD) {
+      return res.status(400).json({ erro: `A password não pode ter mais de ${MAX_BYTES_PASSWORD} bytes` });
+    }
     // "admin" nunca se pede no registo; só se cria diretamente na base de dados.
     if (!['comprador', 'produtor'].includes(papel)) return res.status(400).json({ erro: 'Papel inválido' });
+
+    // Um produtor sem nome da exploração e localidade ficaria com uma página pública vazia.
+    if (papel === 'produtor' && (!texto(produtor?.nomeExploracao) || !texto(produtor?.localidade))) {
+      return res.status(400).json({ erro: 'nomeExploracao e localidade são obrigatórios para produtores' });
+    }
 
     const emailNormalizado = email.trim().toLowerCase();
     if (await User.exists({ email: emailNormalizado })) {
@@ -46,9 +66,9 @@ router.post('/registo', async (req, res, next) => {
     };
     if (papel === 'produtor') {
       dados.produtor = {
-        nomeExploracao: produtor?.nomeExploracao,
-        descricao: produtor?.descricao,
-        localidade: produtor?.localidade,
+        nomeExploracao: produtor.nomeExploracao.trim(),
+        descricao: texto(produtor.descricao) ? produtor.descricao.trim() : undefined,
+        localidade: produtor.localidade.trim(),
         validado: false, // só o administrador aprova
       };
     }
@@ -62,8 +82,8 @@ router.post('/registo', async (req, res, next) => {
   }
 });
 
-// POST /api/auth/login  -> 200 { token, utilizador }
-router.post('/login', async (req, res, next) => {
+// POST /api/auth/login  -> 200 { token, utilizador } | 400 | 401 | 429
+router.post('/login', limiteLogin, async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
     // Têm de ser texto: um objeto como {"$ne": null} no email seria uma injeção NoSQL.

@@ -1,13 +1,18 @@
+# Passo 5: especificação OpenAPI da API. Validar no Swagger Editor (https://editor.swagger.io).
+# Documentado: /auth, /admin e /products.
+# TODO: documentar /producers, /orders, /auctions e /reviews quando forem implementados.
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa API
-  version: 0.1.0
+  version: 0.2.0
   description: API REST do mercado digital de produtores locais.
 servers:
   - url: http://localhost:3000/api
 tags:
   - name: Autenticação
     description: Registo, login e sessão
+  - name: Administração
+    description: Só para o papel admin
   - name: Produtos
     description: Catálogo de produtos
 paths:
@@ -40,7 +45,7 @@ paths:
     post:
       tags: [Autenticação]
       summary: Autenticar e obter o token JWT
-      description: Use o token no botão **Authorize** (esquema bearerAuth) para testar os endpoints protegidos.
+      description: Use o token no botão **Authorize** (esquema bearerAuth) para testar os endpoints protegidos. Depois de demasiadas tentativas falhadas (por IP) a API responde 429.
       requestBody:
         required: true
         content:
@@ -58,6 +63,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Erro' }
+        '429': { $ref: '#/components/responses/DemasiadasTentativas' }
   /auth/eu:
     get:
       tags: [Autenticação]
@@ -70,12 +76,67 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Utilizador' }
         '401': { $ref: '#/components/responses/NaoAutenticado' }
+  /admin/estatisticas:
+    get:
+      tags: [Administração]
+      summary: Contadores globais do painel
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200':
+          description: Contadores
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EstatisticasAdmin' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /admin/produtores/pendentes:
+    get:
+      tags: [Administração]
+      summary: Produtores a aguardar validação
+      description: Exclui os já aprovados e os já rejeitados.
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200':
+          description: Lista de produtores por validar (do mais antigo para o mais recente)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProdutorResumo' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /admin/produtores/{id}/validacao:
+    patch:
+      tags: [Administração]
+      summary: Aprovar ou rejeitar um produtor
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { name: id, in: path, required: true, description: Id do utilizador produtor, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [aprovado]
+              properties:
+                aprovado: { type: boolean, description: 'true aprova, false rejeita' }
+      responses:
+        '200':
+          description: Produtor atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProdutorResumo' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
   /products:
     get:
       tags: [Produtos]
       summary: Pesquisar produtos
       parameters:
-        - { name: q, in: query, description: Texto no nome, schema: { type: string } }
+        - { name: q, in: query, description: Texto no nome (texto literal, sem regex), schema: { type: string } }
         - { name: categoria, in: query, schema: { type: string } }
         - { name: precoMax, in: query, schema: { type: number } }
         - { name: bio, in: query, schema: { type: boolean } }
@@ -87,9 +148,10 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
     post:
       tags: [Produtos]
-      summary: Criar produto (produtor)
+      summary: Criar produto (produtor validado)
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -97,10 +159,18 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/ProductInput' }
       responses:
-        '201': { description: Produto criado }
-        '400': { description: Dados inválidos }
-        '401': { description: Token em falta ou inválido }
-        '403': { description: Utilizador não é produtor }
+        '201':
+          description: Produto criado
+          headers:
+            Location:
+              description: URL do produto criado
+              schema: { type: string, example: /api/products/6ae74b6365b32f14f82bffdc }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
   /products/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -113,25 +183,37 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Product' }
-        '404': { description: Não encontrado }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
     put:
       tags: [Produtos]
-      summary: Atualizar produto (produtor dono)
+      summary: Atualizar produto (produtor dono e validado)
       security: [ { bearerAuth: [] } ]
       requestBody:
+        required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/ProductInput' }
       responses:
-        '200': { description: Produto atualizado }
-        '404': { description: Não encontrado }
+        '200':
+          description: Produto atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
     delete:
       tags: [Produtos]
-      summary: Remover produto (produtor dono)
+      summary: Remover produto (produtor dono e validado)
       security: [ { bearerAuth: [] } ]
       responses:
         '204': { description: Removido }
-        '404': { description: Não encontrado }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
@@ -142,7 +224,22 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/Erro' }
     NaoAutenticado:
-      description: Token em falta ou inválido
+      description: Token em falta, inválido ou expirado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+    SemPermissao:
+      description: O papel do utilizador não permite esta operação (ou o produtor ainda não foi validado)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+    NaoEncontrado:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erro' }
+    DemasiadasTentativas:
+      description: Demasiadas tentativas falhadas; esperar e tentar de novo
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Erro' }
@@ -157,11 +254,11 @@ components:
       properties:
         nome: { type: string, example: Tasca do Lima }
         email: { type: string, format: email, example: novo@exemplo.pt }
-        password: { type: string, format: password, minLength: 8, example: segredo123 }
+        password: { type: string, format: password, minLength: 8, example: segredo123, description: 'Entre 8 caracteres e 72 bytes' }
         papel: { type: string, enum: [comprador, produtor], default: comprador }
         produtor:
           type: object
-          description: Só para papel = produtor
+          description: Obrigatório (nomeExploracao e localidade) quando papel = produtor
           properties:
             nomeExploracao: { type: string }
             descricao: { type: string }
@@ -181,16 +278,41 @@ components:
         papel: { type: string, enum: [comprador, produtor, admin] }
         produtor:
           type: object
+          description: Só existe quando papel = produtor
           properties:
             nomeExploracao: { type: string }
             descricao: { type: string }
             localidade: { type: string }
             validado: { type: boolean }
+            rejeitado: { type: boolean }
     LoginResposta:
       type: object
       properties:
         token: { type: string }
         utilizador: { $ref: '#/components/schemas/Utilizador' }
+    EstatisticasAdmin:
+      type: object
+      properties:
+        utilizadores: { type: integer }
+        produtores: { type: integer, description: Produtores já validados }
+        produtoresPorValidar: { type: integer }
+        encomendasHoje: { type: integer }
+        leiloesAtivos: { type: integer }
+    ProdutorResumo:
+      type: object
+      properties:
+        id: { type: string }
+        nome: { type: string }
+        email: { type: string }
+        criadoEm: { type: string, format: date-time }
+        produtor:
+          type: object
+          properties:
+            nomeExploracao: { type: string }
+            descricao: { type: string }
+            localidade: { type: string }
+            validado: { type: boolean }
+            rejeitado: { type: boolean }
     ProductInput:
       type: object
       required: [nome, categoria, preco]

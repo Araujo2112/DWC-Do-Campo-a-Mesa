@@ -13,7 +13,8 @@ const userSchema = new Schema({
     descricao: String,
     localidade: String,
     localizacao: { lat: Number, lng: Number },
-    validado: { type: Boolean, default: false } // o administrador valida o registo
+    validado: { type: Boolean, default: false }, // o administrador valida o registo
+    rejeitado: { type: Boolean, default: false } // o administrador rejeitou o registo
   }
   // TODO (Passo 4): favoritos? morada de entrega? tipo de comprador (particular/restaurante)?
 }, { timestamps: true });

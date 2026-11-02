@@ -2,6 +2,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import RotaProtegida from './components/RotaProtegida.jsx';
+import { useAuth } from './context/AuthContext.jsx';
 import Catalogo from './pages/Catalogo.jsx';
 import Produtor from './pages/Produtor.jsx';
 import Leiloes from './pages/Leiloes.jsx';
@@ -15,11 +16,28 @@ import NovoLeilao from './pages/produtor/NovoLeilao.jsx';
 import PainelAdmin from './pages/admin/Painel.jsx';
 import NaoEncontrado from './pages/NaoEncontrado.jsx';
 
+// Aviso para produtores que ainda não podem publicar (o servidor também o impede).
+function AvisoValidacao() {
+  const { utilizador } = useAuth();
+  if (utilizador?.papel !== 'produtor' || utilizador.produtor?.validado) return null;
+
+  return utilizador.produtor?.rejeitado ? (
+    <div className="alert alert-danger" role="status">
+      O registo da tua conta de produtor foi rejeitado pelo administrador.
+    </div>
+  ) : (
+    <div className="alert alert-warning" role="status">
+      A tua conta de produtor está a aguardar validação do administrador. Até lá não podes publicar produtos nem leilões.
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <>
       <Navbar />
       <main className="container-xl py-4">
+        <AvisoValidacao />
         <Routes>
           {/* Visitante */}
           <Route path="/" element={<Catalogo />} />
