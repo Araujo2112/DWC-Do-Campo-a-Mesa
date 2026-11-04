@@ -1,10 +1,10 @@
 # Passo 5: especificação OpenAPI da API. Validar no Swagger Editor (https://editor.swagger.io).
-# Documentado: /auth, /admin e /products.
-# TODO: documentar /producers, /orders, /auctions e /reviews quando forem implementados.
+# Documentado: /auth, /admin, /products, /producers e /orders.
+# TODO: documentar /auctions e /reviews quando forem implementados.
 openapi: 3.0.3
 info:
   title: Do Campo à Mesa API
-  version: 0.2.0
+  version: 0.3.0
   description: API REST do mercado digital de produtores locais.
 servers:
   - url: http://localhost:3000/api
@@ -15,6 +15,10 @@ tags:
     description: Só para o papel admin
   - name: Produtos
     description: Catálogo de produtos
+  - name: Produtores
+    description: Páginas públicas dos produtores validados
+  - name: Encomendas
+    description: Checkout e acompanhamento das encomendas
 paths:
   /auth/registo:
     post:
@@ -111,7 +115,7 @@ paths:
       summary: Aprovar ou rejeitar um produtor
       security: [ { bearerAuth: [] } ]
       parameters:
-        - { name: id, in: path, required: true, description: Id do utilizador produtor, schema: { type: string } }
+        - { $ref: '#/components/parameters/Id' }
       requestBody:
         required: true
         content:
@@ -138,8 +142,12 @@ paths:
       parameters:
         - { name: q, in: query, description: Texto no nome (texto literal, sem regex), schema: { type: string } }
         - { name: categoria, in: query, schema: { type: string } }
+        - { name: precoMin, in: query, schema: { type: number } }
         - { name: precoMax, in: query, schema: { type: number } }
         - { name: bio, in: query, schema: { type: boolean } }
+        - { name: epoca, in: query, schema: { type: string, enum: [Primavera, Verão, Outono, Inverno] } }
+        - { name: produtor, in: query, description: Id do produtor, schema: { type: string } }
+        - { name: ordenar, in: query, description: 'Por omissão: recentes', schema: { type: string, enum: [recentes, nome, preco_asc, preco_desc] } }
       responses:
         '200':
           description: Lista de produtos
@@ -152,6 +160,7 @@ paths:
     post:
       tags: [Produtos]
       summary: Criar produto (produtor validado)
+      description: O dono do produto é sempre o produtor autenticado; um campo `produtor` no corpo é ignorado.
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -173,7 +182,7 @@ paths:
         '403': { $ref: '#/components/responses/SemPermissao' }
   /products/{id}:
     parameters:
-      - { name: id, in: path, required: true, schema: { type: string } }
+      - { $ref: '#/components/parameters/Id' }
     get:
       tags: [Produtos]
       summary: Detalhe de um produto
@@ -188,6 +197,7 @@ paths:
     put:
       tags: [Produtos]
       summary: Atualizar produto (produtor dono e validado)
+      description: Substitui os dados do produto. O produto de outro produtor responde 404.
       security: [ { bearerAuth: [] } ]
       requestBody:
         required: true
@@ -214,9 +224,150 @@ paths:
         '401': { $ref: '#/components/responses/NaoAutenticado' }
         '403': { $ref: '#/components/responses/SemPermissao' }
         '404': { $ref: '#/components/responses/NaoEncontrado' }
+  /producers:
+    get:
+      tags: [Produtores]
+      summary: Listar produtores validados
+      parameters:
+        - { name: localidade, in: query, description: Texto na localidade (texto literal), schema: { type: string } }
+      responses:
+        '200':
+          description: Produtores validados (sem dados privados)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProdutorPublico' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+  /producers/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Produtores]
+      summary: Página pública de um produtor
+      description: Só devolve produtores validados. A avaliação média é null enquanto não houver avaliações.
+      responses:
+        '200':
+          description: Produtor, produtos e avaliação média
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  produtor: { $ref: '#/components/schemas/ProdutorPublico' }
+                  produtos:
+                    type: array
+                    items: { $ref: '#/components/schemas/Product' }
+                  avaliacaoMedia: { type: number, nullable: true }
+                  numAvaliacoes: { type: integer }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+  /orders:
+    post:
+      tags: [Encomendas]
+      summary: Encomendar (comprador)
+      description: >
+        Cria uma encomenda por produtor. Nome e preço são copiados da base de dados (o cliente não os escolhe)
+        e o stock é descontado de forma atómica. Se algum produto não tiver stock, nada é encomendado (409).
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EncomendaInput' }
+      responses:
+        '201':
+          description: Encomendas criadas (uma por produtor)
+          headers:
+            Location:
+              description: URL da encomenda (só quando é criada uma)
+              schema: { type: string, example: /api/orders/6ae74b6365b32f14f82bffdc }
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Encomenda' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '409':
+          description: Stock insuficiente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Erro' }
+    get:
+      tags: [Encomendas]
+      summary: As minhas encomendas
+      description: O comprador vê as que fez; o produtor as que recebeu; o admin todas. Mais recentes primeiro (máximo 100).
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200':
+          description: Lista de encomendas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Encomenda' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+  /orders/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Encomendas]
+      summary: Detalhe de uma encomenda
+      description: Uma encomenda de outra pessoa responde 404 (não se revela que existe).
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200':
+          description: Encomenda
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Encomenda' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+  /orders/{id}/estado:
+    patch:
+      tags: [Encomendas]
+      summary: Mudar o estado de uma encomenda (produtor dono)
+      description: O estado só avança um passo (pendente, confirmada, pronta, entregue). O comprador é notificado pelo evento `encomenda-atualizada`.
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado: { type: string, enum: [pendente, confirmada, pronta, entregue] }
+      responses:
+        '200':
+          description: Encomenda atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Encomenda' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '409':
+          description: Transição de estado inválida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Erro' }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: Identificador (ObjectId com 24 caracteres hexadecimais)
+      schema: { type: string }
   responses:
     DadosInvalidos:
       description: Dados inválidos
@@ -313,23 +464,87 @@ components:
             localidade: { type: string }
             validado: { type: boolean }
             rejeitado: { type: boolean }
+    ProdutorPublico:
+      type: object
+      properties:
+        id: { type: string }
+        nome: { type: string }
+        nomeExploracao: { type: string }
+        descricao: { type: string }
+        localidade: { type: string }
+        localizacao:
+          type: object
+          properties:
+            lat: { type: number }
+            lng: { type: number }
     ProductInput:
       type: object
       required: [nome, categoria, preco]
       properties:
-        nome: { type: string, example: Kiwi Hayward }
+        nome: { type: string, maxLength: 100, example: Kiwi Hayward }
         categoria: { type: string, enum: [Hortícolas, Fruta, Mel, Vinho, Queijo, Padaria, Outros] }
-        preco: { type: number, example: 2.4 }
-        unidade: { type: string, example: kg }
-        stock: { type: integer, example: 300 }
-        biologico: { type: boolean }
-        epocas: { type: array, items: { type: string } }
+        preco: { type: number, minimum: 0, example: 2.4 }
+        unidade: { type: string, default: kg, example: kg }
+        stock: { type: integer, minimum: 0, default: 0, example: 300 }
+        biologico: { type: boolean, default: false }
+        epocas: { type: array, items: { type: string, enum: [Primavera, Verão, Outono, Inverno] } }
     Product:
       allOf:
         - $ref: '#/components/schemas/ProductInput'
         - type: object
           properties:
             _id: { type: string }
-            produtor: { type: string, description: Id do produtor (ou objeto com populate) }
+            produtor: { type: string, description: Id do produtor (ou objeto com nome e localidade nas listagens) }
             imagemUrl: { type: string }
-    # TODO: Order, Auction, Bid, Review
+    EncomendaInput:
+      type: object
+      required: [linhas]
+      properties:
+        linhas:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required: [produto, quantidade]
+            properties:
+              produto: { type: string, description: Id do produto }
+              quantidade: { type: integer, minimum: 1, maximum: 1000 }
+        entrega:
+          type: object
+          properties:
+            tipo: { type: string, enum: [levantamento, entrega], default: levantamento }
+            morada: { type: string, maxLength: 200, description: Obrigatória quando tipo = entrega }
+    Encomenda:
+      type: object
+      properties:
+        id: { type: string }
+        comprador:
+          type: object
+          properties:
+            id: { type: string }
+            nome: { type: string }
+        produtor:
+          type: object
+          properties:
+            id: { type: string }
+            nome: { type: string }
+        linhas:
+          type: array
+          items:
+            type: object
+            properties:
+              produto: { type: string }
+              nome: { type: string, description: Cópia do nome no momento da compra }
+              precoUnit: { type: number, description: Cópia do preço no momento da compra }
+              quantidade: { type: integer }
+        total: { type: number }
+        estado: { type: string, enum: [pendente, confirmada, pronta, entregue] }
+        entrega:
+          type: object
+          properties:
+            tipo: { type: string, enum: [levantamento, entrega] }
+            morada: { type: string }
+        criadoEm: { type: string, format: date-time }
+        atualizadoEm: { type: string, format: date-time }
+    # TODO: Auction, Bid, Review

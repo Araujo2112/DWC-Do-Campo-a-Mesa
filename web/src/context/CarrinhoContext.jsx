@@ -17,16 +17,24 @@ export function CarrinhoProvider({ children }) {
     });
   }
 
+  function alterar(produtoId, quantidade) {
+    if (!Number.isInteger(quantidade) || quantidade < 1) return;
+    setLinhas((atual) => atual.map((l) => l.produto._id === produtoId ? { ...l, quantidade } : l));
+  }
+
   function remover(produtoId) {
     setLinhas((atual) => atual.filter((l) => l.produto._id !== produtoId));
   }
 
-  // TODO: alterar quantidade, esvaziar após encomendar, agrupar por produtor
+  function esvaziar() {
+    setLinhas([]);
+  }
+
   const total = useMemo(
     () => linhas.reduce((s, l) => s + l.produto.preco * l.quantidade, 0), [linhas]);
 
   return (
-    <CarrinhoContext.Provider value={{ linhas, adicionar, remover, total }}>
+    <CarrinhoContext.Provider value={{ linhas, adicionar, alterar, remover, esvaziar, total }}>
       {children}
     </CarrinhoContext.Provider>
   );
