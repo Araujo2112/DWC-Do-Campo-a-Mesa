@@ -18,8 +18,11 @@ const orderSchema = new Schema({
   entrega: {
     tipo: { type: String, enum: ['levantamento', 'entrega'], default: 'levantamento' },
     morada: String
-  }
-  // TODO (Passo 7): origem/leilao quando a encomenda vier de um leilão ganho
+  },
+  origem: { type: String, enum: ['carrinho', 'leilao'], default: 'carrinho' },
+  // Índice único (só para quem tem o campo): um leilão gera no máximo UMA encomenda,
+  // mesmo que o ciclo de fecho corra duas vezes ou em duas instâncias.
+  leilao: { type: Types.ObjectId, ref: 'Auction', unique: true, sparse: true }
 }, { timestamps: true });
 
 orderSchema.statics.ESTADOS = ESTADOS;

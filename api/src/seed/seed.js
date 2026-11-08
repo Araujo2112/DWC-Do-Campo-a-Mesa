@@ -5,10 +5,14 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Auction = require('../models/Auction');
+const Bid = require('../models/Bid');
+const Order = require('../models/Order');
 
 async function seed() {
   await mongoose.connect(process.env.MONGODB_URI);
-  await Promise.all([User.deleteMany(), Product.deleteMany(), Auction.deleteMany()]);
+  await Promise.all([
+    User.deleteMany(), Product.deleteMany(), Auction.deleteMany(), Bid.deleteMany(), Order.deleteMany(),
+  ]);
 
   const passwordHash = await bcrypt.hash('password123', 12);
   const [admin, horta, mel, comprador] = await User.create([
@@ -28,11 +32,12 @@ async function seed() {
     { produtor: mel._id, nome: 'Mel de castanheiro', categoria: 'Mel', preco: 7.0, unidade: '500 g', stock: 21 }
   ]);
 
+  // Leilão ativo durante 2 horas (para testar à vontade; volta a correr o seed quando acabar)
   const agora = Date.now();
   await Auction.create({
     produtor: horta._id, lote: '200 kg de kiwi Hayward, calibre A', quantidade: '200 kg',
     precoBase: 200, incremento: 5, licitacaoAtual: { valor: 200 },
-    iniciaEm: new Date(agora), terminaEm: new Date(agora + 30 * 60 * 1000), estado: 'ativo'
+    iniciaEm: new Date(agora), terminaEm: new Date(agora + 2 * 60 * 60 * 1000), estado: 'ativo'
   });
 
   console.log('Seed concluído. Utilizadores (password: password123):');

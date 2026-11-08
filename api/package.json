@@ -8,7 +8,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/seed/seed.js",
-    "test": "node --test test/e2e.js test/produtos-encomendas.e2e.js"
+    "test": "node --test test/e2e.js test/produtos-encomendas.e2e.js test/leiloes.e2e.js"
   },
   "engines": {
     "node": ">=22"
@@ -29,6 +29,7 @@
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.7",
+    "socket.io-client": "^4.8.0"
   }
 }
