@@ -10,19 +10,78 @@
 .cartao-produto {
   border-color: $linha;
   overflow: hidden;
+  background: #fff;
 
-  &__imagem { height: 160px; background: rgba($verde, .12); }
-  .preco { color: $verde; font-weight: 700; font-size: 1.15rem; }
+  $cores-categoria: (
+    horticolas: #DCE8C8, fruta: #F6DCC8, mel: #F4E2A8,
+    vinho: #E8D2E0, queijo: #F1E7C6, padaria: #E7D5BF
+  );
+
+  &__imagem {
+    position: relative;
+    height: 9rem;
+    display: grid; place-items: center;
+    background: #E4E6DC;
+    img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  }
+  @each $nome, $cor in $cores-categoria {
+    &__imagem--#{$nome} { background: $cor; }
+  }
+  &__letra { font-family: Georgia, serif; font-size: 3.5rem; color: rgba($tinta, .4); }
+
+  .preco { color: $tinta; font-weight: 700; font-size: 1.1rem; }
+  .icone-local { vertical-align: -1px; }
   .etiqueta-bio {
-    align-self: flex-start;
-    font-size: .7rem; font-weight: 700;
-    padding: .15rem .5rem; margin-bottom: .5rem;
+    position: absolute; top: .6rem; left: .6rem;
+    font-size: .65rem; font-weight: 700; letter-spacing: .05em;
+    padding: .15rem .5rem;
     border-radius: .35rem;
-    background: rgba($verde, .12); color: $verde-escuro;
+    background: #fff; color: $verde-escuro;
   }
 }
 
+// Página inicial: apresentação à esquerda, leilão em destaque à direita
+.hero {
+  display: grid; gap: 1.5rem; align-items: center;
+  @include a-partir-de(lg) { grid-template-columns: 1.2fr 1fr; gap: 3rem; }
+
+  h1 {
+    font-family: Georgia, serif; line-height: 1.1; margin-bottom: 1rem;
+    font-size: 2.25rem;
+    @include a-partir-de(lg) { font-size: 3.25rem; }
+  }
+  &__etiqueta {
+    font-size: .75rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: $terracota; margin-bottom: .75rem;
+  }
+  &__texto { max-width: 32rem; margin-bottom: 0; }
+}
+
+.leilao-destaque {
+  background: $verde-escuro; color: #fff;
+  border-radius: 1rem; padding: 1.5rem;
+
+  &__etiqueta {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    margin-bottom: .75rem;
+  }
+  &__titulo { font-family: Georgia, serif; font-size: 1.5rem; margin-bottom: .5rem; }
+  &__produtor { font-size: .85rem; color: rgba(#fff, .7); margin-bottom: 1rem; }
+  &__texto { font-size: .9rem; color: rgba(#fff, .75); margin-bottom: 1rem; }
+  &--a-carregar { min-height: 14rem; }
+  &__valores {
+    display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: 1rem;
+    > div { background: rgba(#fff, .09); border-radius: .75rem; padding: .75rem 1rem; }
+    span { display: block; font-size: .7rem; color: rgba(#fff, .7); }
+    strong { font-size: 1.5rem; }
+  }
+  .ponto-direto { width: .55rem; height: .55rem; border-radius: 50%; background: #F0654B; }
+}
+
 .filtros {
-  display: flex; flex-direction: column; gap: .75rem;
-  @include a-partir-de(lg) { flex-direction: row; align-items: center; }
+  display: grid; gap: .75rem;
+  &__pesquisa { grid-column: 1 / -1; }
+  &__opcoes { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+  @include a-partir-de(lg) { grid-template-columns: 1fr auto; align-items: center; }
 }

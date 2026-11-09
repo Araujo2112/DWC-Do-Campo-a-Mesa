@@ -2,6 +2,17 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCarrinho } from '../context/CarrinhoContext.jsx';
 
+function IconeCarrinho() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
+  );
+}
+
 export default function Navbar() {
   const { utilizador, sair } = useAuth();
   const { quantidadeTotal } = useCarrinho();
@@ -30,10 +41,19 @@ export default function Navbar() {
           </ul>
           <div className="d-flex gap-2 align-items-center">
             {utilizador?.papel === 'comprador' && (
-              <Link to="/carrinho" className="btn btn-outline-secondary">Carrinho ({quantidadeTotal})</Link>
+              <Link to="/carrinho" className="btn btn-outline-secondary d-inline-flex align-items-center gap-2"
+                aria-label={`Carrinho, ${quantidadeTotal} ${quantidadeTotal === 1 ? 'unidade' : 'unidades'}`}>
+                <IconeCarrinho />
+                <span className="badge rounded-pill text-bg-success" aria-hidden="true">{quantidadeTotal}</span>
+              </Link>
             )}
             {utilizador ? (
-              <button type="button" className="btn btn-outline-secondary" onClick={sair}>Sair</button>
+              <>
+                <span className="nome-conta d-inline-block text-truncate small texto-secundario" title={utilizador.nome}>
+                  {utilizador.nome}
+                </span>
+                <button type="button" className="btn btn-outline-secondary" onClick={sair}>Sair</button>
+              </>
             ) : (
               <>
                 <Link to="/login" className="btn btn-outline-secondary">Entrar</Link>

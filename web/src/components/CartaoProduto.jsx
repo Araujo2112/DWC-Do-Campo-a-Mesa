@@ -2,6 +2,9 @@ import { Link } from 'react-router-dom';
 import { useCarrinho } from '../context/CarrinhoContext.jsx';
 import Estrelas from './Estrelas.jsx';
 
+// "Hortícolas" -> "horticolas": escolhe a cor do cartão
+const slug = (t = '') => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+
 const euro = (v) => v.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 
 export default function CartaoProduto({ produto, onAdicionar, onVerAvaliacoes }) {
@@ -17,35 +20,43 @@ export default function CartaoProduto({ produto, onAdicionar, onVerAvaliacoes })
 
   return (
     <article className="card cartao-produto h-100">
-      {produto.imagemUrl ? (
-        <img src={produto.imagemUrl} className="card-img-top" alt={produto.nome} />
-      ) : (
-        <div className="cartao-produto__imagem" aria-hidden="true" />
-      )}
-      <div className="card-body d-flex flex-column">
+      <div className={`cartao-produto__imagem cartao-produto__imagem--${slug(produto.categoria)}`}>
+        {produto.imagemUrl ? (
+          <img src={produto.imagemUrl} alt={produto.nome} />
+        ) : (
+          <span className="cartao-produto__letra" aria-hidden="true">{produto.nome.charAt(0)}</span>
+        )}
         {produto.biologico && <span className="etiqueta-bio">BIO</span>}
+      </div>
+      <div className="card-body d-flex flex-column">
         <h3 className="h6 mb-1">{produto.nome}</h3>
         {dono && (
-          <p className="texto-secundario small mb-2">
+          <p className="texto-secundario small mb-3">
+            <svg className="icone-local" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+              <path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z" fill="none" stroke="currentColor" strokeWidth="2" />
+              <circle cx="12" cy="10" r="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
+            </svg>{' '}
             <Link to={`/produtores/${dono._id}`} className="text-reset">{dono.nome}</Link>
             {dono.produtor?.localidade && <> · {dono.produtor.localidade}</>}
           </p>
         )}
-        {produto.numAvaliacoes !== undefined && (
-          <p className="texto-secundario small mb-1">
-            {onVerAvaliacoes && produto.numAvaliacoes > 0 ? (
-              <button type="button" className="btn btn-link btn-sm p-0 align-baseline"
-                aria-label={`Ver as avaliações de ${produto.nome}`} onClick={() => onVerAvaliacoes(produto)}>
-                <Estrelas media={produto.avaliacaoMedia} total={produto.numAvaliacoes} />
-              </button>
-            ) : (
-              <Estrelas media={produto.avaliacaoMedia} total={produto.numAvaliacoes} />
-            )}
+        <div className="d-flex justify-content-between align-items-center gap-2 mt-auto mb-3">
+          <p className="preco mb-0">
+            {euro(produto.preco)} <span className="texto-secundario small fw-normal">/ {produto.unidade}</span>
           </p>
-        )}
-        <p className="preco mt-auto">
-          {euro(produto.preco)} <span className="texto-secundario small">/ {produto.unidade}</span>
-        </p>
+          {produto.numAvaliacoes !== undefined && (
+            <span className="texto-secundario small text-end">
+              {onVerAvaliacoes && produto.numAvaliacoes > 0 ? (
+                <button type="button" className="btn btn-link btn-sm p-0 align-baseline"
+                  aria-label={`Ver as avaliações de ${produto.nome}`} onClick={() => onVerAvaliacoes(produto)}>
+                  <Estrelas media={produto.avaliacaoMedia} total={produto.numAvaliacoes} />
+                </button>
+              ) : (
+                <Estrelas media={produto.avaliacaoMedia} total={produto.numAvaliacoes} />
+              )}
+            </span>
+          )}
+        </div>
 
         {onAdicionar && (noCarrinho === 0 ? (
           <button type="button" className="btn btn-success w-100" onClick={onAdicionar} disabled={esgotado}>
