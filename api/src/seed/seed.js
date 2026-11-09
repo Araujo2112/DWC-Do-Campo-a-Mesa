@@ -7,11 +7,12 @@ const Product = require('../models/Product');
 const Auction = require('../models/Auction');
 const Bid = require('../models/Bid');
 const Order = require('../models/Order');
+const Review = require('../models/Review');
 
 async function seed() {
   await mongoose.connect(process.env.MONGODB_URI);
   await Promise.all([
-    User.deleteMany(), Product.deleteMany(), Auction.deleteMany(), Bid.deleteMany(), Order.deleteMany(),
+    User.deleteMany(), Product.deleteMany(), Auction.deleteMany(), Bid.deleteMany(), Order.deleteMany(), Review.deleteMany(),
   ]);
 
   const passwordHash = await bcrypt.hash('password123', 12);

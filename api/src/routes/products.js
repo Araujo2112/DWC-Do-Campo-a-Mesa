@@ -7,6 +7,7 @@ const auth = require('../middleware/auth');
 const produtorValidado = require('../middleware/produtorValidado');
 const idValido = require('../middleware/idValido');
 const porFazer = require('./_naoImplementado');
+const { mediasDosProdutos } = require('../services/avaliacoes');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -108,7 +109,8 @@ router.get('/', async (req, res, next) => {
     const lista = await Product.find(filtro)
       .sort(ORDENACOES[ordenar || 'recentes'])
       .populate('produtor', 'nome produtor.localidade');
-    res.json(lista);
+    const media = await mediasDosProdutos(lista.map((p) => p._id));
+    res.json(lista.map((p) => ({ ...p.toObject(), ...media(p._id) })));
   } catch (err) { next(err); }
 });
 
@@ -117,7 +119,8 @@ router.get('/:id', idValido(), async (req, res, next) => {
   try {
     const p = await Product.findById(req.params.id).populate('produtor', 'nome produtor.localidade');
     if (!p) return res.status(404).json({ erro: 'Produto não encontrado' });
-    res.json(p);
+    const media = await mediasDosProdutos([p._id]);
+    res.json({ ...p.toObject(), ...media(p._id) });
   } catch (err) { next(err); }
 });
 

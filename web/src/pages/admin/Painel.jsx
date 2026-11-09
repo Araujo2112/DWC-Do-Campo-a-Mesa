@@ -16,8 +16,10 @@ export default function PainelAdmin() {
   const { token, sair } = useAuth();
   const [estatisticas, setEstatisticas] = useState(null);
   const [pendentes, setPendentes] = useState([]);
+  const [denunciadas, setDenunciadas] = useState([]);
   const [aCarregar, setACarregar] = useState(true);
   const [aDecidir, setADecidir] = useState(null); // id do produtor com um pedido em curso
+  const [aModerar, setAModerar] = useState(null); // id da avaliação com um pedido em curso
   const [erro, setErro] = useState('');
 
   function tratarErro(err) {
@@ -28,12 +30,14 @@ export default function PainelAdmin() {
 
   async function carregar() {
     try {
-      const [est, pend] = await Promise.all([
+      const [est, pend, den] = await Promise.all([
         api('/admin/estatisticas', { token }),
         api('/admin/produtores/pendentes', { token }),
+        api('/admin/reviews/denunciadas', { token }),
       ]);
       setEstatisticas(est);
       setPendentes(pend);
+      setDenunciadas(den);
       setErro('');
     } catch (err) {
       tratarErro(err);
@@ -56,6 +60,18 @@ export default function PainelAdmin() {
       tratarErro(err);
     } finally {
       setADecidir(null);
+    }
+  }
+
+  async function moderar(id, acao) {
+    setAModerar(id);
+    try {
+      await api(`/admin/reviews/${id}`, { metodo: 'PATCH', corpo: { acao }, token });
+      await carregar();
+    } catch (err) {
+      tratarErro(err);
+    } finally {
+      setAModerar(null);
     }
   }
 
@@ -124,9 +140,43 @@ export default function PainelAdmin() {
         </ul>
       </section>
 
-      <PorImplementar passo={3}>
-        avaliações denunciadas (<code>GET /api/admin/reviews/denunciadas</code>) e lista de leilões ativos.
-      </PorImplementar>
+      <section aria-labelledby="titulo-denunciadas" className="mb-4">
+        <h2 id="titulo-denunciadas" className="h4">Avaliações denunciadas</h2>
+        {!aCarregar && denunciadas.length === 0 && (
+          <p className="text-muted">Não há avaliações por moderar.</p>
+        )}
+        <ul className="list-group">
+          {denunciadas.map((r) => (
+            <li
+              key={r.id}
+              className="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2"
+            >
+              <div>
+                <div>
+                  <span aria-label={`${r.classificacao} em 5`}>{'★'.repeat(r.classificacao)}</span>
+                  {' '}<strong>{r.autor}</strong> sobre {r.produto ? `${r.produto} (${r.produtor})` : r.produtor}
+                </div>
+                {r.comentario && <div>{r.comentario}</div>}
+                <div className="small text-muted">
+                  {r.numDenuncias} {r.numDenuncias === 1 ? 'denúncia' : 'denúncias'}
+                </div>
+              </div>
+              <div className="d-flex gap-2">
+                <button type="button" className="btn btn-outline-secondary" disabled={aModerar !== null}
+                  onClick={() => moderar(r.id, 'manter')}>
+                  Manter
+                </button>
+                <button type="button" className="btn btn-outline-danger" disabled={aModerar !== null}
+                  onClick={() => moderar(r.id, 'ocultar')}>
+                  Ocultar
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <PorImplementar passo={3}>lista de leilões ativos.</PorImplementar>
     </>
   );
 }

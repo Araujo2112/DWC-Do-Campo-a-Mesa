@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotificacoes } from '../hooks/useNotificacoes.js';
 import EstadoEncomenda from '../components/EstadoEncomenda.jsx';
-import PorImplementar from '../components/PorImplementar.jsx';
+import AvaliacoesDaEncomenda from '../components/AvaliacoesDaEncomenda.jsx';
 
 const euro = (v) => v.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 const codigo = (id) => `#${String(id).slice(-6).toUpperCase()}`;
@@ -12,13 +12,19 @@ const codigo = (id) => `#${String(id).slice(-6).toUpperCase()}`;
 export default function Encomendas() {
   const { token, sair } = useAuth();
   const [encomendas, setEncomendas] = useState([]);
+  const [minhas, setMinhas] = useState([]); // as avaliações que já fiz
   const [aCarregar, setACarregar] = useState(true);
   const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState('');
 
   async function carregar() {
     try {
-      setEncomendas(await api('/orders', { token }));
+      const [lista, avaliadas] = await Promise.all([
+        api('/orders', { token }),
+        api('/reviews/minhas', { token }),
+      ]);
+      setEncomendas(lista);
+      setMinhas(avaliadas);
       setErro('');
     } catch (err) {
       if (err.status === 401) return sair();
@@ -85,10 +91,17 @@ export default function Encomendas() {
           <p className="text-muted small mb-0">
             {o.entrega.tipo === 'entrega' ? `Entrega em: ${o.entrega.morada}` : 'Levantamento no produtor'}
           </p>
+
+          {o.estado === 'entregue' && (
+            <AvaliacoesDaEncomenda
+              encomenda={o}
+              minhas={minhas}
+              token={token}
+              aoAvaliar={(nova) => setMinhas((lista) => [nova, ...lista])}
+            />
+          )}
         </article>
       ))}
-
-      <PorImplementar passo={3}>permitir avaliar encomendas entregues.</PorImplementar>
     </>
   );
 }

@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Review = require('../models/Review');
 const idValido = require('../middleware/idValido');
+const { VISIVEL, mediasDosProdutos, arredondar } = require('../services/avaliacoes');
 
 const escaparRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -43,16 +44,18 @@ router.get('/:id', idValido(), async (req, res, next) => {
     const [produtos, avaliacoes] = await Promise.all([
       Product.find({ produtor: u._id }).sort({ nome: 1 }).lean(),
       Review.aggregate([
-        { $match: { produtor: u._id, visivel: true } },
+        // produto: null = só as avaliações ao produtor (as dos produtos não entram nesta média)
+        { $match: { produtor: u._id, produto: null, ...VISIVEL } },
         { $group: { _id: null, media: { $avg: '$classificacao' }, total: { $sum: 1 } } },
       ]),
     ]);
 
+    const media = await mediasDosProdutos(produtos.map((p) => p._id));
     const a = avaliacoes[0];
     res.json({
       produtor: publico(u),
-      produtos,
-      avaliacaoMedia: a ? Math.round(a.media * 10) / 10 : null,
+      produtos: produtos.map((p) => ({ ...p, ...media(p._id) })),
+      avaliacaoMedia: a ? arredondar(a.media) : null,
       numAvaliacoes: a ? a.total : 0,
     });
   } catch (err) { next(err); }

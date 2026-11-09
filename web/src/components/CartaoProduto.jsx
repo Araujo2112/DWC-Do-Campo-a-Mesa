@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useCarrinho } from '../context/CarrinhoContext.jsx';
+import Estrelas from './Estrelas.jsx';
 
 const euro = (v) => v.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 
-export default function CartaoProduto({ produto, onAdicionar }) {
+export default function CartaoProduto({ produto, onAdicionar, onVerAvaliacoes }) {
   const { quantidadeDe, alterar, remover } = useCarrinho();
 
   const dono = produto.produtor && typeof produto.produtor === 'object' ? produto.produtor : null;
@@ -28,6 +29,18 @@ export default function CartaoProduto({ produto, onAdicionar }) {
           <p className="texto-secundario small mb-2">
             <Link to={`/produtores/${dono._id}`} className="text-reset">{dono.nome}</Link>
             {dono.produtor?.localidade && <> · {dono.produtor.localidade}</>}
+          </p>
+        )}
+        {produto.numAvaliacoes !== undefined && (
+          <p className="texto-secundario small mb-1">
+            {onVerAvaliacoes && produto.numAvaliacoes > 0 ? (
+              <button type="button" className="btn btn-link btn-sm p-0 align-baseline"
+                aria-label={`Ver as avaliações de ${produto.nome}`} onClick={() => onVerAvaliacoes(produto)}>
+                <Estrelas media={produto.avaliacaoMedia} total={produto.numAvaliacoes} />
+              </button>
+            ) : (
+              <Estrelas media={produto.avaliacaoMedia} total={produto.numAvaliacoes} />
+            )}
           </p>
         )}
         <p className="preco mt-auto">

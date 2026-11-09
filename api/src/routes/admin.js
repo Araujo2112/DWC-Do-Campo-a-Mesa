@@ -5,7 +5,8 @@ const auth = require('../middleware/auth');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const Auction = require('../models/Auction');
-const porFazer = require('./_naoImplementado');
+const Review = require('../models/Review');
+const idValido = require('../middleware/idValido');
 
 router.use(auth('admin'));
 
@@ -79,10 +80,54 @@ router.patch('/produtores/:id/validacao', async (req, res, next) => {
   }
 });
 
-// GET /api/admin/reviews/denunciadas  -> 200
-router.get('/reviews/denunciadas', porFazer('Avaliações denunciadas'));
+// GET /api/admin/reviews/denunciadas  -> 200 [avaliações na fila de moderação]
+router.get('/reviews/denunciadas', async (req, res, next) => {
+  try {
+    const lista = await Review.find({ moderacao: 'denunciada' })
+      .sort({ createdAt: 1 })
+      .limit(100)
+      .populate('autor', 'nome')
+      .populate('produtor', 'nome')
+      .populate('produto', 'nome')
+      .lean();
 
-// PATCH /api/admin/reviews/:id  { visivel: false }  -> 200
-router.patch('/reviews/:id', porFazer('Moderar avaliação'));
+    res.json(lista.map((r) => ({
+      id: r._id,
+      classificacao: r.classificacao,
+      comentario: r.comentario ?? '',
+      autor: r.autor?.nome ?? 'Utilizador removido',
+      produtor: r.produtor?.nome ?? null,
+      produto: r.produto?.nome ?? null,
+      numDenuncias: r.denunciadoPor.length,
+      criadoEm: r.createdAt,
+    })));
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/admin/reviews/:id  { acao: 'ocultar' | 'manter' }  -> 200 { id, moderacao } | 400 | 404 | 409
+// ocultar: sai das listagens e da média. manter: fica "revista" e novas denúncias já não a põem na fila.
+router.patch('/reviews/:id', idValido(), async (req, res, next) => {
+  try {
+    const { acao } = req.body || {};
+    if (acao !== 'ocultar' && acao !== 'manter') {
+      return res.status(400).json({ erro: 'acao tem de ser "ocultar" ou "manter"' });
+    }
+
+    const manter = acao === 'manter';
+    const r = await Review.findOneAndUpdate(
+      { _id: req.params.id, moderacao: manter ? 'denunciada' : { $ne: 'oculta' } },
+      { moderacao: manter ? 'revista' : 'oculta' },
+      { new: true }
+    ).lean();
+
+    if (!r) {
+      const existe = await Review.exists({ _id: req.params.id });
+      return existe
+        ? res.status(409).json({ erro: 'A avaliação não está em estado de ser moderada assim' })
+        : res.status(404).json({ erro: 'Avaliação não encontrada' });
+    }
+    res.json({ id: r._id, moderacao: r.moderacao });
+  } catch (err) { next(err); }
+});
 
 module.exports = router;
