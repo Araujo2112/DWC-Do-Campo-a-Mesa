@@ -149,6 +149,7 @@ paths:
         - { name: precoMax, in: query, schema: { type: number } }
         - { name: bio, in: query, schema: { type: boolean } }
         - { name: epoca, in: query, schema: { type: string, enum: [Primavera, Verão, Outono, Inverno] } }
+        - { name: localidade, in: query, description: Texto na localidade do produtor (texto literal), schema: { type: string } }
         - { name: produtor, in: query, description: Id do produtor, schema: { type: string } }
         - { name: ordenar, in: query, description: 'Por omissão: recentes', schema: { type: string, enum: [recentes, nome, preco_asc, preco_desc] } }
       responses:
@@ -227,6 +228,40 @@ paths:
         '401': { $ref: '#/components/responses/NaoAutenticado' }
         '403': { $ref: '#/components/responses/SemPermissao' }
         '404': { $ref: '#/components/responses/NaoEncontrado' }
+  /producers/me:
+    patch:
+      tags: [Produtores]
+      summary: Editar o perfil público (produtor autenticado)
+      description: "Altera só os campos enviados. Com `localizacao` a null a posição é apagada. Qualquer outro campo (por exemplo `validado`) é ignorado."
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PerfilProdutorInput' }
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProdutorPublico' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /producers/me/estatisticas:
+    get:
+      tags: [Produtores]
+      summary: Indicadores do painel do produtor
+      description: As vendas contam as encomendas criadas desde o início do mês, de qualquer estado.
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200':
+          description: Indicadores
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EstatisticasProdutor' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
   /producers:
     get:
       tags: [Produtores]
@@ -669,6 +704,29 @@ components:
       properties:
         token: { type: string }
         utilizador: { $ref: '#/components/schemas/Utilizador' }
+    PerfilProdutorInput:
+      type: object
+      properties:
+        nomeExploracao: { type: string, maxLength: 100 }
+        localidade: { type: string, maxLength: 100 }
+        descricao: { type: string, maxLength: 1000 }
+        localizacao:
+          type: object
+          nullable: true
+          properties:
+            lat: { type: number, minimum: -90, maximum: 90 }
+            lng: { type: number, minimum: -180, maximum: 180 }
+    EstatisticasProdutor:
+      type: object
+      properties:
+        vendasMes: { type: number, description: Soma dos totais das encomendas do mês }
+        encomendasMes: { type: integer }
+        encomendasPorTratar: { type: integer, description: Encomendas pendentes }
+        produtosAtivos: { type: integer, description: Produtos com stock }
+        produtosComStockBaixo: { type: integer, description: Produtos com stock até 10 }
+        avaliacaoMedia: { type: number, nullable: true }
+        numAvaliacoes: { type: integer }
+        leiloesAtivos: { type: integer }
     EstatisticasAdmin:
       type: object
       properties:

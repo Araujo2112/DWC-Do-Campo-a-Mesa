@@ -135,6 +135,8 @@ router.post('/', auth('comprador'), async (req, res, next) => {
     }
 
     const resposta = criadas.map((o) => publica(o.toObject()));
+    const io = req.app.get('io');
+    for (const o of resposta) io?.to(`user:${o.produtor.id}`).emit('encomenda-nova', { id: o.id, total: o.total });
     if (resposta.length === 1) res.location(`/api/orders/${resposta[0].id}`);
     res.status(201).json(resposta);
   } catch (err) {

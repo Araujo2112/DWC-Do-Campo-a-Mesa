@@ -3,6 +3,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const { isObjectIdOrHexString } = require('mongoose');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const produtorValidado = require('../middleware/produtorValidado');
 const idValido = require('../middleware/idValido');
@@ -15,6 +16,8 @@ const texto = (v) => typeof v === 'string' && v.trim() !== '';
 
 // Escapa os caracteres especiais de regex: "q=(" ou "q=.*" são texto literal, não padrões.
 const escaparRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const PRODUTOR_VALIDADO = { papel: 'produtor', 'produtor.validado': true };
 
 const ORDENACOES = {
   recentes: { createdAt: -1 },
@@ -66,17 +69,16 @@ function lerProduto(corpo) {
 // GET /api/products?q=&categoria=&precoMin=&precoMax=&bio=&epoca=&produtor=&ordenar=  -> 200 [produtos] | 400
 router.get('/', async (req, res, next) => {
   try {
-    const { q, categoria, precoMin, precoMax, bio, epoca, produtor, ordenar } = req.query;
+    const { q, categoria, precoMin, precoMax, bio, epoca, produtor, localidade, ordenar } = req.query;
 
     // Cada parâmetro tem de ser texto: "?categoria[$ne]=x" chega aqui como objeto (injeção NoSQL).
-    for (const v of [q, categoria, precoMin, precoMax, bio, epoca, produtor, ordenar]) {
+    for (const v of [q, categoria, precoMin, precoMax, bio, epoca, produtor, localidade, ordenar]) {
       if (v !== undefined && typeof v !== 'string') {
         return res.status(400).json({ erro: 'Parâmetros de pesquisa inválidos' });
       }
     }
 
     const filtro = {};
-    if (q) filtro.nome = { $regex: escaparRegex(q), $options: 'i' };
     if (categoria && categoria !== 'Todos') filtro.categoria = categoria;
 
     const preco = {};
@@ -98,10 +100,29 @@ router.get('/', async (req, res, next) => {
       if (!Product.EPOCAS.includes(epoca)) return res.status(400).json({ erro: 'epoca inválida' });
       filtro.epocas = epoca;
     }
+    // Condições sobre o produtor juntam-se com $and: o produto tem de cumprir todas.
+    const condicoes = [];
     if (produtor) {
       if (!isObjectIdOrHexString(produtor)) return res.status(400).json({ erro: 'produtor inválido' });
-      filtro.produtor = produtor;
+      condicoes.push({ produtor });
     }
+    if (localidade) {
+      const ids = await User.distinct('_id', {
+        ...PRODUTOR_VALIDADO,
+        'produtor.localidade': { $regex: escaparRegex(localidade), $options: 'i' },
+      });
+      condicoes.push({ produtor: { $in: ids } });
+    }
+    if (q) {
+      const padrao = { $regex: escaparRegex(q), $options: 'i' };
+      // "q" procura no nome do produto e no nome do produtor (da conta e da exploração)
+      const ids = await User.distinct('_id', {
+        ...PRODUTOR_VALIDADO,
+        $or: [{ nome: padrao }, { 'produtor.nomeExploracao': padrao }],
+      });
+      condicoes.push({ $or: [{ nome: padrao }, { produtor: { $in: ids } }] });
+    }
+    if (condicoes.length) filtro.$and = condicoes;
     if (ordenar && !ORDENACOES[ordenar]) {
       return res.status(400).json({ erro: `ordenar tem de ser um de: ${Object.keys(ORDENACOES).join(', ')}` });
     }

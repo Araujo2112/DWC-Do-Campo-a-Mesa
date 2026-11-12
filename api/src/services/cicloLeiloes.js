@@ -86,6 +86,9 @@ async function fecharExpirados(io) {
         });
       }
       io.to(`user:${a.produtor}`).emit('leilao-terminado', { ...resultado, lote: a.lote });
+      if (encomenda) {
+        io.to(`user:${a.produtor}`).emit('encomenda-nova', { id: String(encomenda._id), total: a.licitacaoAtual.valor });
+      }
     } catch (err) {
       console.error(`Ciclo dos leilões: falha no leilão ${a._id}:`, err);
     }

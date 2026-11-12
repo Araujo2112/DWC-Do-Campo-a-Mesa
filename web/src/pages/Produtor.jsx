@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import CartaoProduto from '../components/CartaoProduto.jsx';
-import PorImplementar from '../components/PorImplementar.jsx';
+import MapaProdutor from '../components/MapaProdutor.jsx';
 import ListaAvaliacoes from '../components/ListaAvaliacoes.jsx';
 import Estrelas from '../components/Estrelas.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -73,6 +73,13 @@ export default function Produtor() {
         {produtor.descricao && <p>{produtor.descricao}</p>}
       </header>
 
+      {produtor.localizacao?.lat != null && produtor.localizacao?.lng != null && (
+        <section className="mb-4" aria-label="Localização">
+          <MapaProdutor lat={produtor.localizacao.lat} lng={produtor.localizacao.lng}
+            nome={produtor.nomeExploracao || produtor.nome} />
+        </section>
+      )}
+
       <h2 className="h4">Produtos ({produtos.length})</h2>
       {produtos.length === 0 && <p className="texto-secundario">Este produtor ainda não tem produtos.</p>}
       <section className="grelha-produtos mb-4" aria-label="Produtos do produtor">
@@ -104,8 +111,6 @@ export default function Produtor() {
       <section className="mb-4" aria-label="Avaliações do produtor">
         <ListaAvaliacoes avaliacoes={avaliacoes} aoDenunciar={aoDenunciar} />
       </section>
-
-      <PorImplementar passo={2}>localização do produtor em mapa.</PorImplementar>
     </>
   );
 }

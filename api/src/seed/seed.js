@@ -19,9 +19,9 @@ async function seed() {
   const [admin, horta, mel, comprador] = await User.create([
     { nome: 'Administração', email: 'admin@exemplo.pt', passwordHash, papel: 'admin' },
     { nome: 'Horta da Ribeira', email: 'horta@exemplo.pt', passwordHash, papel: 'produtor',
-      produtor: { nomeExploracao: 'Horta da Ribeira', localidade: 'Ponte de Lima', validado: true } },
+      produtor: { nomeExploracao: 'Horta da Ribeira', localidade: 'Ponte de Lima', localizacao: { lat: 41.767, lng: -8.584 }, validado: true } },
     { nome: 'Mel do Soajo', email: 'mel@exemplo.pt', passwordHash, papel: 'produtor',
-      produtor: { nomeExploracao: 'Mel do Soajo', localidade: 'Arcos de Valdevez', validado: true } },
+      produtor: { nomeExploracao: 'Mel do Soajo', localidade: 'Arcos de Valdevez', localizacao: { lat: 41.88, lng: -8.30 }, validado: true } },
     { nome: 'Tasca do Lima', email: 'tasca@exemplo.pt', passwordHash, papel: 'comprador' }
   ]);
 

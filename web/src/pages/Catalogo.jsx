@@ -17,10 +17,16 @@ const ORDENACOES = [
 
 export default function Catalogo() {
   const [produtos, setProdutos] = useState([]);
-  const [filtro, setFiltro] = useState({ q: '', categoria: 'Todos', bio: false, epoca: '', ordenar: 'recentes' });
+  const [filtro, setFiltro] = useState({ q: '', categoria: 'Todos', bio: false, epoca: '', localidade: '', produtor: '', ordenar: 'recentes' });
+  const [produtores, setProdutores] = useState([]);
   const [erro, setErro] = useState('');
   const carrinho = useCarrinho();
   const { utilizador } = useAuth();
+
+  useEffect(() => {
+    if (USAR_DADOS_SIMULADOS) return;
+    api('/producers').then(setProdutores).catch(() => setProdutores([]));
+  }, []);
 
   useEffect(() => {
     if (USAR_DADOS_SIMULADOS) {
@@ -36,12 +42,17 @@ export default function Catalogo() {
     if (filtro.categoria !== 'Todos') q.set('categoria', filtro.categoria);
     if (filtro.bio) q.set('bio', 'true');
     if (filtro.epoca) q.set('epoca', filtro.epoca);
+    if (filtro.localidade) q.set('localidade', filtro.localidade);
+    if (filtro.produtor) q.set('produtor', filtro.produtor);
     if (filtro.ordenar !== 'recentes') q.set('ordenar', filtro.ordenar);
     api(`/products?${q}`).then(setProdutos).catch((e) => setErro(e.message));
   }, [filtro]);
 
   const mudar = (campo) => (e) =>
     setFiltro((f) => ({ ...f, [campo]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
+
+  const localidades = [...new Set(produtores.map((p) => p.localidade).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
+  const produtoresVisiveis = produtores.filter((p) => !filtro.localidade || p.localidade === filtro.localidade);
 
   return (
     <>
@@ -59,7 +70,7 @@ export default function Catalogo() {
       <section className="filtros mb-4" aria-label="Filtros">
         <label className="visually-hidden" htmlFor="pesquisa">Pesquisar</label>
         <input id="pesquisa" type="search" className="form-control rounded-pill filtros__pesquisa"
-          placeholder="Pesquisar kiwi, mel, Alvarinho…" value={filtro.q} onChange={mudar('q')} />
+          placeholder="Pesquisar kiwi, mel, Alvarinho, produtor…" value={filtro.q} onChange={mudar('q')} />
 
         <div className="d-flex flex-wrap gap-2">
           {CATEGORIAS.map((c) => (
@@ -79,6 +90,19 @@ export default function Catalogo() {
             value={filtro.epoca} onChange={mudar('epoca')}>
             <option value="">Todas</option>
             {EPOCAS.map((e) => <option key={e} value={e}>{e}</option>)}
+          </select>
+          <label className="small texto-secundario" htmlFor="localidade">Localidade</label>
+          <select id="localidade" className="form-select form-select-sm rounded-pill w-auto"
+            value={filtro.localidade}
+            onChange={(e) => setFiltro((f) => ({ ...f, localidade: e.target.value, produtor: '' }))}>
+            <option value="">Todas</option>
+            {localidades.map((l) => <option key={l} value={l}>{l}</option>)}
+          </select>
+          <label className="small texto-secundario" htmlFor="produtor">Produtor</label>
+          <select id="produtor" className="form-select form-select-sm rounded-pill w-auto"
+            value={filtro.produtor} onChange={mudar('produtor')}>
+            <option value="">Todos</option>
+            {produtoresVisiveis.map((p) => <option key={p.id} value={p.id}>{p.nomeExploracao || p.nome}</option>)}
           </select>
           <label className="small texto-secundario" htmlFor="ordenar">Ordenar</label>
           <select id="ordenar" className="form-select form-select-sm rounded-pill w-auto"

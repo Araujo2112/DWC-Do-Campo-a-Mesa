@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext.jsx';
-import PorImplementar from '../../components/PorImplementar.jsx';
+import { useContagem, formatarTempo } from '../../hooks/useContagem.js';
 
 const CONTADORES = [
   ['utilizadores', 'Utilizadores'],
@@ -12,11 +12,19 @@ const CONTADORES = [
   ['leiloesAtivos', 'Leilões ativos'],
 ];
 
+const euro = (v) => v.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+
+function Restante({ alvo }) {
+  const ms = useContagem(alvo);
+  return <>{ms === 0 ? 'agora' : formatarTempo(ms)}</>;
+}
+
 export default function PainelAdmin() {
   const { token, sair } = useAuth();
   const [estatisticas, setEstatisticas] = useState(null);
   const [pendentes, setPendentes] = useState([]);
   const [denunciadas, setDenunciadas] = useState([]);
+  const [ativos, setAtivos] = useState([]);
   const [aCarregar, setACarregar] = useState(true);
   const [aDecidir, setADecidir] = useState(null); // id do produtor com um pedido em curso
   const [aModerar, setAModerar] = useState(null); // id da avaliação com um pedido em curso
@@ -30,14 +38,16 @@ export default function PainelAdmin() {
 
   async function carregar() {
     try {
-      const [est, pend, den] = await Promise.all([
+      const [est, pend, den, leis] = await Promise.all([
         api('/admin/estatisticas', { token }),
         api('/admin/produtores/pendentes', { token }),
         api('/admin/reviews/denunciadas', { token }),
+        api('/auctions?estado=ativo'),
       ]);
       setEstatisticas(est);
       setPendentes(pend);
       setDenunciadas(den);
+      setAtivos(leis);
       setErro('');
     } catch (err) {
       tratarErro(err);
@@ -48,6 +58,8 @@ export default function PainelAdmin() {
 
   useEffect(() => {
     carregar();
+    const t = setInterval(carregar, 15_000);
+    return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -176,7 +188,24 @@ export default function PainelAdmin() {
         </ul>
       </section>
 
-      <PorImplementar passo={3}>lista de leilões ativos.</PorImplementar>
+      <section aria-labelledby="titulo-leiloes" className="mb-4">
+        <h2 id="titulo-leiloes" className="h4">Leilões ativos</h2>
+        {!aCarregar && ativos.length === 0 && <p className="text-muted">Não há leilões em direto.</p>}
+        <ul className="list-group">
+          {ativos.map((l) => (
+            <li key={l.id} className="list-group-item d-flex flex-column flex-md-row justify-content-between gap-1">
+              <div>
+                <strong>{l.lote}</strong>
+                <div className="small text-muted">{l.produtor.nome} · {l.numLicitacoes} licitações</div>
+              </div>
+              <div className="text-md-end">
+                <div className="fw-bold">{euro(l.licitacaoAtual.valor)}</div>
+                <div className="small text-muted">Termina em <Restante alvo={l.terminaEm} /></div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
     </>
   );
 }
