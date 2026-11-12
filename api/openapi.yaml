@@ -22,6 +22,8 @@ tags:
     description: Criação e consulta de leilões (as licitações em direto passam por Socket.io)
   - name: Avaliações
     description: Avaliações do produtor e dos produtos, denúncias e moderação
+  - name: Notificações
+    description: Caixa de notificações do utilizador (sino). As novas chegam em tempo real pelo evento Socket.io "notificacao"
 paths:
   /auth/registo:
     post:
@@ -570,6 +572,32 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Erro' }
+  /notifications:
+    get:
+      tags: [Notificações]
+      summary: As 30 notificações mais recentes do utilizador autenticado
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200':
+          description: Notificações (a mais recente primeiro) e quantas estão por ler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  naoLidas: { type: integer, example: 2 }
+                  itens:
+                    type: array
+                    items: { $ref: '#/components/schemas/Notificacao' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+  /notifications/lidas:
+    post:
+      tags: [Notificações]
+      summary: Marcar todas as notificações do utilizador como lidas
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '204': { description: Marcadas como lidas }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
   /admin/reviews/denunciadas:
     get:
       tags: [Administração]
@@ -658,6 +686,15 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/Erro' }
   schemas:
+    Notificacao:
+      type: object
+      properties:
+        id: { type: string }
+        tipo: { type: string, example: encomenda-nova }
+        texto: { type: string, example: 'Nova encomenda #A1B2C3, de 12,50 €.' }
+        link: { type: string, nullable: true, example: /produtor }
+        lida: { type: boolean }
+        criadoEm: { type: string, format: date-time }
     Erro:
       type: object
       properties:

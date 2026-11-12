@@ -7,6 +7,7 @@ const Order = require('../models/Order');
 const Auction = require('../models/Auction');
 const Review = require('../models/Review');
 const idValido = require('../middleware/idValido');
+const { notificar } = require('../services/notificacoes');
 
 router.use(auth('admin'));
 
@@ -74,6 +75,13 @@ router.patch('/produtores/:id/validacao', async (req, res, next) => {
     ).lean();
 
     if (!u) return res.status(404).json({ erro: 'Produtor não encontrado' });
+    await notificar(req.app.get('io'), u._id, {
+      tipo: 'conta',
+      texto: aprovado
+        ? 'A tua conta de produtor foi aprovada. Já podes publicar produtos e leilões.'
+        : 'O registo da tua conta de produtor foi rejeitado.',
+      link: '/produtor',
+    });
     res.json(resumo(u));
   } catch (err) {
     next(err);

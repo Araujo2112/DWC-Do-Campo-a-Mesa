@@ -8,7 +8,22 @@
 .barra-topo { background: #fff; border-bottom: 1px solid $linha; }
 .marca { font-family: Georgia, serif; font-weight: 700; color: $tinta; }
 .texto-secundario { color: $texto-secundario; }
-.nome-conta { max-width: 11rem; }
+.nome-conta { max-width: 9rem; }
+
+.sino {
+  &__menu { width: 22rem; max-width: calc(100vw - 2rem); }
+  &__titulo { padding: .75rem 1rem; font-weight: 600; border-bottom: 1px solid $linha; }
+  &__vazio { padding: 1rem; color: $texto-secundario; font-size: .9rem; }
+  &__lista { max-height: 22rem; overflow-y: auto; }
+  &__item { border-bottom: 1px solid $linha; &:last-child { border-bottom: 0; } }
+  &__item--nova { background: rgba($verde, .08); }
+  &__ligacao {
+    display: block; padding: .65rem 1rem; color: $tinta; text-decoration: none;
+    &:hover { background: rgba($verde, .12); }
+  }
+  &__texto { display: block; font-size: .9rem; overflow-wrap: anywhere; }
+  &__hora { display: block; font-size: .75rem; color: $texto-secundario; margin-top: .15rem; }
+}
 
 .formulario-estreito { max-width: 28rem; margin-inline: auto; }
 

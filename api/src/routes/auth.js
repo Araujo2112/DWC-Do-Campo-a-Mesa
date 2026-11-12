@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const limiteLogin = require('../middleware/limiteLogin');
+const { notificarAdmins } = require('../services/notificacoes');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const texto = (v) => typeof v === 'string' && v.trim() !== '';
@@ -74,6 +75,13 @@ router.post('/registo', async (req, res, next) => {
     }
 
     const u = await User.create(dados);
+    if (papel === 'produtor') {
+      await notificarAdmins(req.app.get('io'), {
+        tipo: 'produtor-novo',
+        texto: `Novo produtor por validar: ${dados.produtor.nomeExploracao}.`,
+        link: '/admin',
+      });
+    }
     res.status(201).json({ id: u._id });
   } catch (err) {
     // Dois registos quase em simultâneo com o mesmo email: o índice único da BD apanha o segundo.

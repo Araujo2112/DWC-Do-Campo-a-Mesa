@@ -1,6 +1,8 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCarrinho } from '../context/CarrinhoContext.jsx';
+import Sino from './Sino.jsx';
+import MenuConta from './MenuConta.jsx';
 
 function IconeCarrinho() {
   return (
@@ -49,9 +51,8 @@ export default function Navbar() {
             )}
             {utilizador ? (
               <>
-                <span className="nome-conta d-inline-block text-truncate small texto-secundario" title={utilizador.nome}>
-                  {utilizador.nome}
-                </span>
+                <Sino />
+                <MenuConta />
                 <button type="button" className="btn btn-outline-secondary" onClick={sair}>Sair</button>
               </>
             ) : (

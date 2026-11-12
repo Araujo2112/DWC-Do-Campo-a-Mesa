@@ -80,8 +80,12 @@
 }
 
 .filtros {
-  display: grid; gap: .75rem;
+  // minmax(0, ...): sem isto a coluna cresce com o conteúdo (nomes longos nos selects) e esmaga a pesquisa
+  display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr);
   &__pesquisa { grid-column: 1 / -1; }
-  &__opcoes { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
-  @include a-partir-de(lg) { grid-template-columns: 1fr auto; align-items: center; }
+  &__opcoes {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; min-width: 0;
+    .form-select { max-width: 11rem; text-overflow: ellipsis; }
+  }
+  @include a-partir-de(lg) { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 }

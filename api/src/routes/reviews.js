@@ -3,6 +3,9 @@ const router = require('express').Router();
 const { isObjectIdOrHexString, Types } = require('mongoose');
 const Review = require('../models/Review');
 const Order = require('../models/Order');
+const Product = require('../models/Product');
+const User = require('../models/User');
+const { notificar } = require('../services/notificacoes');
 const auth = require('../middleware/auth');
 const idValido = require('../middleware/idValido');
 const { VISIVEL } = require('../services/avaliacoes');
@@ -66,6 +69,19 @@ router.post('/', auth('comprador'), async (req, res, next) => {
       classificacao,
       comentario: comentario?.trim() || undefined,
     });
+    try {
+      const [autor, avaliado] = await Promise.all([
+        User.findById(req.user.id).select('nome').lean(),
+        produto ? Product.findById(produto).select('nome').lean() : null,
+      ]);
+      await notificar(req.app.get('io'), o.produtor, {
+        tipo: 'avaliacao',
+        texto: `${autor?.nome ?? 'Um comprador'} avaliou ${avaliado ? `"${avaliado.nome}"` : 'a tua exploração'} com ${classificacao} ${classificacao === 1 ? 'estrela' : 'estrelas'}.`,
+        link: `/produtores/${o.produtor}`,
+      });
+    } catch (err) {
+      console.error('Notificação da avaliação:', err); // a avaliação já está gravada
+    }
     res.status(201).location(`/api/reviews/${r._id}`).json(minha(r.toObject()));
   } catch (err) {
     // O índice único (encomenda + produto) trava a avaliação repetida, mesmo com dois pedidos em simultâneo.

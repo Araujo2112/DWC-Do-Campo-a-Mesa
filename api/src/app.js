@@ -36,6 +36,7 @@ app.use('/api/producers', require('./routes/producers'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/auctions', require('./routes/auctions'));
 app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', require('./routes/admin'));
 
 app.use((req, res) => res.status(404).json({ erro: 'Recurso não encontrado' }));

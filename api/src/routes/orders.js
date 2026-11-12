@@ -3,9 +3,17 @@ const router = require('express').Router();
 const { isObjectIdOrHexString } = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const User = require('../models/User');
+const { notificar, codigo, euro } = require('../services/notificacoes');
 const auth = require('../middleware/auth');
 const produtorValidado = require('../middleware/produtorValidado');
 const idValido = require('../middleware/idValido');
+
+const TEXTO_ESTADO = {
+  confirmada: (quem, id) => `${quem} confirmou a encomenda ${id}.`,
+  pronta: (quem, id) => `${quem} marcou a encomenda ${id} como pronta a levantar.`,
+  entregue: (quem, id) => `${quem} marcou a encomenda ${id} como entregue.`,
+};
 
 const MAX_LINHAS = 50;
 const MAX_QUANTIDADE = 1000;
@@ -137,6 +145,11 @@ router.post('/', auth('comprador'), async (req, res, next) => {
     const resposta = criadas.map((o) => publica(o.toObject()));
     const io = req.app.get('io');
     for (const o of resposta) io?.to(`user:${o.produtor.id}`).emit('encomenda-nova', { id: o.id, total: o.total });
+    await Promise.all(resposta.map((o) => notificar(io, o.produtor.id, {
+      tipo: 'encomenda-nova',
+      texto: `Nova encomenda ${codigo(o.id)}, de ${euro(o.total)}.`,
+      link: '/produtor',
+    })));
     if (resposta.length === 1) res.location(`/api/orders/${resposta[0].id}`);
     res.status(201).json(resposta);
   } catch (err) {
@@ -198,6 +211,17 @@ router.patch('/:id/estado', auth('produtor'), produtorValidado, idValido(), asyn
 
     // Notifica o comprador em tempo real (o frontend passa a ouvir no Passo 7).
     req.app.get('io')?.to(`user:${o.comprador}`).emit('encomenda-atualizada', { id: o._id, estado: o.estado });
+
+    try {
+      const produtor = await User.findById(req.user.id).select('nome').lean();
+      await notificar(req.app.get('io'), o.comprador, {
+        tipo: 'encomenda-estado',
+        texto: TEXTO_ESTADO[o.estado](produtor?.nome ?? 'O produtor', codigo(o._id)),
+        link: '/encomendas',
+      });
+    } catch (err) {
+      console.error('Notificação do estado da encomenda:', err); // o estado já está gravado
+    }
 
     res.json(publica(o));
   } catch (err) { next(err); }

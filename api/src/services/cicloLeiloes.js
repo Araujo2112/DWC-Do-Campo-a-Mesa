@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Auction = require('../models/Auction');
 const Order = require('../models/Order');
 const { montarEstado } = require('./leiloes');
+const { notificar, euro } = require('./notificacoes');
 
 const INTERVALO_MS = Number(process.env.CICLO_LEILOES_MS) || 5000;
 const sala = (id) => `leilao:${id}`;
@@ -89,6 +90,21 @@ async function fecharExpirados(io) {
       if (encomenda) {
         io.to(`user:${a.produtor}`).emit('encomenda-nova', { id: String(encomenda._id), total: a.licitacaoAtual.valor });
       }
+
+      if (comprador) {
+        await notificar(io, comprador, {
+          tipo: 'leilao-ganho',
+          texto: `Ganhaste o leilão "${a.lote}" por ${euro(a.licitacaoAtual.valor)}. A encomenda já está em "Encomendas".`,
+          link: '/encomendas',
+        });
+      }
+      await notificar(io, a.produtor, {
+        tipo: 'leilao-terminado',
+        texto: comprador
+          ? `O leilão "${a.lote}" terminou: ${vencedor?.nome ?? 'um comprador'} ganhou por ${euro(a.licitacaoAtual.valor)}.`
+          : `O leilão "${a.lote}" terminou sem licitações.`,
+        link: '/produtor',
+      });
     } catch (err) {
       console.error(`Ciclo dos leilões: falha no leilão ${a._id}:`, err);
     }
