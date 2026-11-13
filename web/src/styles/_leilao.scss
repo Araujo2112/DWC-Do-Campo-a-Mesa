@@ -14,6 +14,7 @@
 .sala-leilao {
   display: grid; gap: 1.5rem; align-items: start;
   @include a-partir-de(lg) { grid-template-columns: 1fr 24rem; }
+  @include a-partir-de(xl) { grid-template-columns: 1fr 28rem; }
 
   h1 {
     font-family: Georgia, serif; line-height: 1.15; margin: 0; font-size: 1.75rem;
@@ -25,6 +26,7 @@
     border-radius: 1rem; background: #DCE8C8; color: $verde;
     @include a-partir-de(lg) { height: 17rem; }
   }
+  &__dados { @include colunas(2, 4); gap: .75rem; }
   &__dado {
     height: 100%; padding: .75rem 1rem;
     background: #fff; border: 1px solid $linha; border-radius: .75rem;

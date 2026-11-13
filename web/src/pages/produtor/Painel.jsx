@@ -181,13 +181,13 @@ export default function PainelProdutor() {
 
       {indicadores && (
         <section aria-label="Indicadores" className="mb-4">
-          <div className="row row-cols-2 row-cols-lg-4 g-3">
+          <div className="grelha-indicadores">
             {indicadores.map(([rotulo, valor, detalhe]) => (
-              <div className="col" key={rotulo}>
+              <div key={rotulo}>
                 <div className="card h-100">
                   <div className="card-body">
                     <div className="text-muted small">{rotulo}</div>
-                    <div className="fs-3 fw-bold">{valor}</div>
+                    <div className="indicador__valor">{valor}</div>
                     <div className="small text-muted">{detalhe}</div>
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export default function PainelProdutor() {
                 </div>
                 {ACAO_SEGUINTE[o.estado] && (
                   <div>
-                    <button type="button" className="btn btn-success"
+                    <button type="button" className="btn btn-success btn-movel-bloco"
                       disabled={!validado || aTrabalhar === o.id}
                       onClick={() => avancar(o)}>
                       {ACAO_SEGUINTE[o.estado]}

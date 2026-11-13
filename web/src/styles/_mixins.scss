@@ -2,3 +2,12 @@
 @mixin a-partir-de($bp) {
   @media (min-width: map-get($breakpoints, $bp)) { @content; }
 }
+
+// Grelha com n.º de colunas por breakpoint (Mobile First): colunas(telemóvel, md, lg, xl)
+@mixin colunas($base, $md: $base, $lg: $md, $xl: $lg) {
+  display: grid;
+  grid-template-columns: repeat($base, minmax(0, 1fr));
+  @if $md != $base { @include a-partir-de(md) { grid-template-columns: repeat($md, minmax(0, 1fr)); } }
+  @if $lg != $md { @include a-partir-de(lg) { grid-template-columns: repeat($lg, minmax(0, 1fr)); } }
+  @if $xl != $lg { @include a-partir-de(xl) { grid-template-columns: repeat($xl, minmax(0, 1fr)); } }
+}

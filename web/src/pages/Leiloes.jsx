@@ -72,18 +72,18 @@ export default function Leiloes() {
 
       <h2 className="h4">Em direto</h2>
       {!aCarregar && ativos.length === 0 && <p className="text-muted">Não há leilões em direto neste momento.</p>}
-      <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-4">
+      <div className="grelha-cartoes mb-4">
         {ativos.map((l) => (
-          <div className="col" key={l.id}><CartaoLeilao leilao={l} utilizador={utilizador} /></div>
+          <div key={l.id}><CartaoLeilao leilao={l} utilizador={utilizador} /></div>
         ))}
       </div>
 
       {agendados.length > 0 && (
         <>
           <h2 className="h4">Agendados</h2>
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+          <div className="grelha-cartoes">
             {agendados.map((l) => (
-              <div className="col" key={l.id}><CartaoLeilao leilao={l} agendado utilizador={utilizador} /></div>
+              <div key={l.id}><CartaoLeilao leilao={l} agendado utilizador={utilizador} /></div>
             ))}
           </div>
         </>

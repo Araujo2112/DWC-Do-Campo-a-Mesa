@@ -4,6 +4,7 @@
 @import 'mixins';
 @import 'catalogo';
 @import 'leilao';
+@import 'layout';
 
 .barra-topo { background: #fff; border-bottom: 1px solid $linha; }
 .marca { font-family: Georgia, serif; font-weight: 700; color: $tinta; }
@@ -30,6 +31,8 @@
 
 .estado-encomenda {
   display: flex; justify-content: space-between; list-style: none; padding: 0; margin: 0;
+  font-size: .8rem;
+  @include a-partir-de(md) { font-size: 1rem; }
   li { color: $texto-secundario; text-transform: capitalize; }
   .feito { color: $verde; font-weight: 600; }
   .atual { color: $terracota; font-weight: 700; }

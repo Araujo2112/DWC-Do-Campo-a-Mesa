@@ -1,10 +1,12 @@
 .grelha-produtos {
-  display: grid;
+  @include colunas(2, 3, 3, 4);   // telemóvel 2 · 768 px 3 · 1280 px 4
+  gap: .75rem;
+  @include a-partir-de(md) { gap: 1rem; }
+}
+
+.grelha-cartoes {
+  @include colunas(1, 2, 3);
   gap: 1rem;
-  grid-template-columns: 1fr;                 // telemóvel
-  @include a-partir-de(md) { grid-template-columns: repeat(2, 1fr); }
-  @include a-partir-de(lg) { grid-template-columns: repeat(3, 1fr); }
-  @include a-partir-de(xl) { grid-template-columns: repeat(4, 1fr); }
 }
 
 .cartao-produto {
@@ -19,8 +21,10 @@
 
   &__imagem {
     position: relative;
-    height: 9rem;
+    height: 7rem;
     display: grid; place-items: center;
+    @include a-partir-de(md) { height: 9rem; }
+    @include a-partir-de(xl) { height: 10rem; }
     background: #E4E6DC;
     img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   }
@@ -29,7 +33,10 @@
   }
   &__letra { font-family: Georgia, serif; font-size: 3.5rem; color: rgba($tinta, .4); }
 
-  .preco { color: $tinta; font-weight: 700; font-size: 1.1rem; }
+  .card-body { padding: .75rem; @include a-partir-de(md) { padding: 1rem; } }
+  h3 { overflow-wrap: anywhere; }
+  .btn { font-size: .85rem; @include a-partir-de(md) { font-size: 1rem; } }
+  .preco { color: $tinta; font-weight: 700; font-size: 1rem; @include a-partir-de(md) { font-size: 1.1rem; } }
   .icone-local { vertical-align: -1px; }
   .etiqueta-bio {
     position: absolute; top: .6rem; left: .6rem;
@@ -83,9 +90,27 @@
   // minmax(0, ...): sem isto a coluna cresce com o conteúdo (nomes longos nos selects) e esmaga a pesquisa
   display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr);
   &__pesquisa { grid-column: 1 / -1; }
+
+  // Telemóvel: grelha de 2 colunas, com a etiqueta por cima de cada campo
   &__opcoes {
-    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; min-width: 0;
-    .form-select { max-width: 11rem; text-overflow: ellipsis; }
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; min-width: 0;
+  }
+  &__bio { grid-column: 1 / -1; margin-bottom: 0; }
+  &__campo {
+    min-width: 0;
+    label { display: block; margin-bottom: .2rem; font-size: .8rem; color: $texto-secundario; }
+    .form-select { width: 100%; text-overflow: ellipsis; }
+  }
+
+  // 768 px: tudo numa linha, com a etiqueta ao lado do campo
+  @include a-partir-de(md) {
+    &__opcoes { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+    &__bio { grid-column: auto; }
+    &__campo {
+      display: flex; align-items: center; gap: .5rem;
+      label { margin: 0; font-size: .875rem; }
+      .form-select { width: auto; max-width: 11rem; }
+    }
   }
   @include a-partir-de(lg) { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 }

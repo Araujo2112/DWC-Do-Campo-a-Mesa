@@ -60,7 +60,7 @@ export default function Carrinho() {
                 {produto.produtor?.nome} · {euro(produto.preco)} / {produto.unidade}
               </div>
             </div>
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex flex-wrap align-items-center gap-2">
               <label htmlFor={`qtd-${produto._id}`} className="visually-hidden">Quantidade de {produto.nome}</label>
               <input
                 id={`qtd-${produto._id}`}
@@ -111,7 +111,7 @@ export default function Carrinho() {
 
       {erro && <div className="alert alert-danger" role="alert">{erro}</div>}
 
-      <button type="submit" className="btn btn-success" disabled={aEnviar}>
+      <button type="submit" className="btn btn-success btn-movel-bloco" disabled={aEnviar}>
         {aEnviar ? 'A encomendar...' : 'Encomendar'}
       </button>
     </form>

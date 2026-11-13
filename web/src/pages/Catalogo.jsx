@@ -81,34 +81,42 @@ export default function Catalogo() {
         </div>
 
         <div className="filtros__opcoes">
-          <div className="form-check mb-0">
+          <div className="form-check filtros__bio">
             <input id="bio" className="form-check-input" type="checkbox" checked={filtro.bio} onChange={mudar('bio')} />
             <label className="form-check-label" htmlFor="bio">Só biológico</label>
           </div>
-          <label className="small texto-secundario" htmlFor="epoca">Época</label>
-          <select id="epoca" className="form-select form-select-sm rounded-pill w-auto"
-            value={filtro.epoca} onChange={mudar('epoca')}>
-            <option value="">Todas</option>
-            {EPOCAS.map((e) => <option key={e} value={e}>{e}</option>)}
-          </select>
-          <label className="small texto-secundario" htmlFor="localidade">Localidade</label>
-          <select id="localidade" className="form-select form-select-sm rounded-pill w-auto"
-            value={filtro.localidade}
-            onChange={(e) => setFiltro((f) => ({ ...f, localidade: e.target.value, produtor: '' }))}>
-            <option value="">Todas</option>
-            {localidades.map((l) => <option key={l} value={l}>{l}</option>)}
-          </select>
-          <label className="small texto-secundario" htmlFor="produtor">Produtor</label>
-          <select id="produtor" className="form-select form-select-sm rounded-pill w-auto"
-            value={filtro.produtor} onChange={mudar('produtor')}>
-            <option value="">Todos</option>
-            {produtoresVisiveis.map((p) => <option key={p.id} value={p.id}>{p.nomeExploracao || p.nome}</option>)}
-          </select>
-          <label className="small texto-secundario" htmlFor="ordenar">Ordenar</label>
-          <select id="ordenar" className="form-select form-select-sm rounded-pill w-auto"
-            value={filtro.ordenar} onChange={mudar('ordenar')}>
-            {ORDENACOES.map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}
-          </select>
+          <div className="filtros__campo">
+            <label htmlFor="epoca">Época</label>
+            <select id="epoca" className="form-select form-select-sm rounded-pill"
+              value={filtro.epoca} onChange={mudar('epoca')}>
+              <option value="">Todas</option>
+              {EPOCAS.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+          <div className="filtros__campo">
+            <label htmlFor="localidade">Localidade</label>
+            <select id="localidade" className="form-select form-select-sm rounded-pill"
+              value={filtro.localidade}
+              onChange={(e) => setFiltro((f) => ({ ...f, localidade: e.target.value, produtor: '' }))}>
+              <option value="">Todas</option>
+              {localidades.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+          <div className="filtros__campo">
+            <label htmlFor="produtor">Produtor</label>
+            <select id="produtor" className="form-select form-select-sm rounded-pill"
+              value={filtro.produtor} onChange={mudar('produtor')}>
+              <option value="">Todos</option>
+              {produtoresVisiveis.map((p) => <option key={p.id} value={p.id}>{p.nomeExploracao || p.nome}</option>)}
+            </select>
+          </div>
+          <div className="filtros__campo">
+            <label htmlFor="ordenar">Ordenar</label>
+            <select id="ordenar" className="form-select form-select-sm rounded-pill"
+              value={filtro.ordenar} onChange={mudar('ordenar')}>
+              {ORDENACOES.map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}
+            </select>
+          </div>
         </div>
       </section>
 

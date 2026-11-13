@@ -96,12 +96,12 @@ export default function PainelAdmin() {
 
       {estatisticas && (
         <section aria-label="Estatísticas" className="mb-4">
-          <div className="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3">
+          <div className="grelha-indicadores grelha-indicadores--admin">
             {CONTADORES.map(([campo, etiqueta]) => (
-              <div className="col" key={campo}>
+              <div key={campo}>
                 <div className="card h-100">
                   <div className="card-body">
-                    <div className="fs-2 fw-bold">{estatisticas[campo]}</div>
+                    <div className="indicador__valor">{estatisticas[campo]}</div>
                     <div className="text-muted small">{etiqueta}</div>
                   </div>
                 </div>

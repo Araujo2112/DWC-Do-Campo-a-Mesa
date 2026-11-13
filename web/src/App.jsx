@@ -37,7 +37,7 @@ export default function App() {
   return (
     <>
       <Navbar />
-      <main className="container-xl py-4">
+      <main className="container-xl py-3 py-md-4">
         <AvisoValidacao />
         <Routes>
           {/* Visitante */}

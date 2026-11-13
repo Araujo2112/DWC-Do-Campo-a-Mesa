@@ -1,0 +1,29 @@
+// Cabeçalho: o .navbar do Bootstrap põe padding-x a 0 e anula a margem do .container-xl
+.barra-topo .navbar { padding-inline: .75rem; }
+
+// Botão do menu: contorno discreto; o anel de foco só aparece com o teclado
+.navbar-toggler {
+  border-color: $linha;
+  &:focus { box-shadow: none; }
+  &:focus-visible { outline: 2px solid $verde; outline-offset: 2px; }
+}
+
+// Indicadores (painel do produtor e administração)
+.grelha-indicadores {
+  @include colunas(2, 2, 4);
+  gap: .75rem;
+  @include a-partir-de(md) { gap: 1rem; }
+  &--admin { @include colunas(2, 3, 3, 5); }
+}
+.indicador__valor {
+  font-size: 1.35rem; font-weight: 700; overflow-wrap: anywhere;
+  @include a-partir-de(md) { font-size: 1.75rem; }
+}
+
+.list-group-item { overflow-wrap: anywhere; }
+
+// Botão de largura total no telemóvel, automático a partir de 768 px
+.btn-movel-bloco {
+  width: 100%;
+  @include a-partir-de(md) { width: auto; }
+}

@@ -51,9 +51,9 @@ export default function SalaLeilao() {
             <IconeMartelo tamanho={96} />
           </div>
 
-          <div className="row row-cols-2 row-cols-md-4 g-3">
+          <div className="sala-leilao__dados">
             {dados.map(([rotulo, valor]) => (
-              <div className="col" key={rotulo}>
+              <div key={rotulo}>
                 <div className="sala-leilao__dado"><span>{rotulo}</span><strong>{valor}</strong></div>
               </div>
             ))}

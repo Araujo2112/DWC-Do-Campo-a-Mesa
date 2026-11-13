@@ -40,7 +40,7 @@ export default function CartaoProduto({ produto, onAdicionar, onVerAvaliacoes })
             {dono.produtor?.localidade && <> · {dono.produtor.localidade}</>}
           </p>
         )}
-        <div className="d-flex justify-content-between align-items-center gap-2 mt-auto mb-3">
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-1 mt-auto mb-3">
           <p className="preco mb-0">
             {euro(produto.preco)} <span className="texto-secundario small fw-normal">/ {produto.unidade}</span>
           </p>
@@ -59,8 +59,9 @@ export default function CartaoProduto({ produto, onAdicionar, onVerAvaliacoes })
         </div>
 
         {onAdicionar && (noCarrinho === 0 ? (
-          <button type="button" className="btn btn-success w-100" onClick={onAdicionar} disabled={esgotado}>
-            {esgotado ? 'Esgotado' : 'Adicionar ao carrinho'}
+          <button type="button" className="btn btn-success w-100" onClick={onAdicionar} disabled={esgotado}
+            aria-label={esgotado ? undefined : `Adicionar ${produto.nome} ao carrinho`}>
+            {esgotado ? 'Esgotado' : <>Adicionar<span className="d-none d-md-inline"> ao carrinho</span></>}
           </button>
         ) : (
           <>
