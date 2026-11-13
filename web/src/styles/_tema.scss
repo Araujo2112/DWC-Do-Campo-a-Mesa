@@ -1,0 +1,125 @@
+// Tema visual: superfícies brancas sobre o fundo creme, sombras suaves, títulos em serifa, cabeçalho fixo
+$sombra-suave: 0 1px 2px rgba($tinta, .05), 0 10px 24px -14px rgba($tinta, .25);
+$sombra-elevada: 0 2px 4px rgba($tinta, .06), 0 16px 32px -14px rgba($tinta, .3);
+$borda-campo: #D6CAB3;
+
+body {
+  background:
+    radial-gradient(60rem 28rem at 85% -8rem, rgba($verde, .09), transparent 70%),
+    radial-gradient(40rem 22rem at -10% 12rem, rgba($terracota, .06), transparent 70%),
+    $fundo;
+  background-attachment: fixed;
+}
+
+h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; letter-spacing: -.01em; }
+h1 { font-size: 1.85rem; margin-bottom: 1rem; @include a-partir-de(md) { font-size: 2.4rem; } }
+h2 { font-size: 1.4rem; @include a-partir-de(md) { font-size: 1.75rem; } }
+h3 { font-size: 1.15rem; }
+
+// Cabeçalho fixo, com vidro fosco
+.barra-topo {
+  position: sticky; top: 0; z-index: 1030;
+  background: rgba(#fff, .88);
+  backdrop-filter: saturate(160%) blur(10px);
+  box-shadow: 0 1px 0 $linha, 0 8px 20px -16px rgba($tinta, .35);
+}
+.navbar-nav .nav-link {
+  font-weight: 500; color: $texto-secundario; border-radius: .6rem; padding: .5rem .85rem;
+  transition: background .15s, color .15s;
+  &:hover { color: $tinta; background: rgba($verde, .07); }
+  &.active { color: $verde-escuro; background: rgba($verde, .12); font-weight: 600; }
+}
+
+// Superfícies
+.card, .list-group { --bs-card-bg: #fff; --bs-list-group-bg: #fff; }
+.card { border-color: rgba($linha, .9); box-shadow: $sombra-suave; }
+.list-group {
+  border-radius: $border-radius; box-shadow: $sombra-suave; border: 1px solid $linha; overflow: hidden;
+  .list-group-item { border-color: $linha; border-left: 0; border-right: 0; padding: .9rem 1rem; }
+  .list-group-item:first-child { border-top: 0; }
+  .list-group-item:last-child { border-bottom: 0; }
+}
+.cartao-produto {
+  transition: transform .18s ease, box-shadow .18s ease;
+  &:hover { transform: translateY(-3px); box-shadow: $sombra-elevada; }
+}
+
+// Formulários de página (entrar, registar, perfil, novo leilão): num cartão
+.formulario-estreito {
+  background: #fff; border: 1px solid $linha; border-radius: 1.25rem; box-shadow: $sombra-suave;
+  padding: 1.25rem;
+  @include a-partir-de(md) { padding: 2rem; margin-top: 1rem; }
+}
+
+// Campos
+.form-control, .form-select {
+  background-color: #fff; border-color: $borda-campo;
+  &:focus { border-color: $verde; box-shadow: 0 0 0 .25rem rgba($verde, .16); }
+}
+.form-check-input { background-color: #fff; border-color: $borda-campo; &:checked { background-color: $verde; border-color: $verde; } }
+.form-label { font-weight: 500; }
+
+// Botões
+.btn { font-weight: 600; transition: transform .12s ease, box-shadow .15s ease, background-color .15s; }
+.btn-success {
+  --bs-btn-bg: #{$verde}; --bs-btn-border-color: #{$verde};
+  --bs-btn-hover-bg: #{$verde-escuro}; --bs-btn-hover-border-color: #{$verde-escuro};
+  --bs-btn-active-bg: #{$verde-escuro}; --bs-btn-active-border-color: #{$verde-escuro};
+  box-shadow: 0 6px 14px -8px rgba($verde, .8);
+  &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 18px -8px rgba($verde, .85); }
+}
+.btn-outline-secondary {
+  --bs-btn-color: #{$texto-secundario}; --bs-btn-border-color: #{$borda-campo};
+  --bs-btn-hover-bg: #{rgba($verde, .08)}; --bs-btn-hover-color: #{$verde-escuro}; --bs-btn-hover-border-color: #{$verde};
+  --bs-btn-active-bg: #{rgba($verde, .14)}; --bs-btn-active-color: #{$verde-escuro}; --bs-btn-active-border-color: #{$verde};
+  background: #fff;
+}
+
+.alert { border: 0; border-radius: $border-radius; box-shadow: $sombra-suave; }
+.badge { font-weight: 600; letter-spacing: .02em; }
+
+// Estado da encomenda: passos com bolinha e linha de ligação
+.estado-encomenda {
+  gap: 0; margin: .5rem 0 .25rem;
+  li {
+    position: relative; flex: 1; text-align: center; padding-top: 1.5rem;
+    font-size: .75rem; font-weight: 500;
+    @include a-partir-de(md) { font-size: .9rem; }
+    &::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 1;
+      width: .9rem; height: .9rem; border-radius: 50%; background: #fff; border: 2px solid $borda-campo;
+    }
+    &:not(:last-child)::after {
+      content: ''; position: absolute; top: calc(.45rem - 1px); left: 50%; width: 100%; height: 2px; background: $linha;
+    }
+  }
+  li.feito {
+    color: $verde;
+    &::before { background: $verde; border-color: $verde; }
+    &:not(:last-child)::after { background: $verde; }
+  }
+  li.atual {
+    color: $terracota;
+    &::before { background: $terracota; border-color: $terracota; box-shadow: 0 0 0 4px rgba($terracota, .18); }
+  }
+}
+
+// Indicadores dos painéis
+.indicador__valor { font-family: Georgia, serif; color: $verde-escuro; }
+
+// Caixa do mapa
+.mapa-produtor iframe { box-shadow: $sombra-suave; }
+
+// Nome da conta sem menu (comprador e admin)
+.nome-conta-chip {
+  display: inline-block; max-width: 10rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: .375rem .5rem; font-weight: 600; color: $texto-secundario;
+}
+
+// Menus suspensos: superfície branca como o resto
+.dropdown-menu {
+  --bs-dropdown-bg: #fff; --bs-dropdown-border-color: #{$linha};
+  --bs-dropdown-link-hover-bg: #{rgba($verde, .08)}; --bs-dropdown-link-active-bg: #{$verde};
+  box-shadow: $sombra-elevada; padding: .4rem;
+  .dropdown-item { border-radius: .5rem; padding: .5rem .75rem; }
+}

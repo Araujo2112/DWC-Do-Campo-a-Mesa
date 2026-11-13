@@ -1,9 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
-// O nome da conta abre este menu: é por aqui que o produtor chega ao perfil público.
+// Só o produtor tem menu: o perfil público e a página própria não existem no cabeçalho.
+// Comprador e admin já têm as suas ligações no cabeçalho, por isso veem apenas o nome.
 export default function MenuConta() {
   const { utilizador } = useAuth();
+
+  if (utilizador.papel !== 'produtor') {
+    return <span className="nome-conta-chip" title={utilizador.nome}>{utilizador.nome}</span>;
+  }
 
   return (
     <div className="dropdown">
@@ -12,23 +17,9 @@ export default function MenuConta() {
         <span className="nome-conta text-truncate">{utilizador.nome}</span>
       </button>
       <ul className="dropdown-menu dropdown-menu-end">
-        {utilizador.papel === 'produtor' && (
-          <>
-            <li><Link className="dropdown-item" to="/produtor">Painel</Link></li>
-            <li><Link className="dropdown-item" to="/produtor/perfil">Perfil público</Link></li>
-            {utilizador.produtor?.validado && (
-              <li><Link className="dropdown-item" to={`/produtores/${utilizador.id}`}>Ver a minha página</Link></li>
-            )}
-          </>
-        )}
-        {utilizador.papel === 'comprador' && (
-          <>
-            <li><Link className="dropdown-item" to="/encomendas">As minhas encomendas</Link></li>
-            <li><Link className="dropdown-item" to="/carrinho">Carrinho</Link></li>
-          </>
-        )}
-        {utilizador.papel === 'admin' && (
-          <li><Link className="dropdown-item" to="/admin">Administração</Link></li>
+        <li><Link className="dropdown-item" to="/produtor/perfil">Perfil público</Link></li>
+        {utilizador.produtor?.validado && (
+          <li><Link className="dropdown-item" to={`/produtores/${utilizador.id}`}>Ver a minha página</Link></li>
         )}
       </ul>
     </div>
