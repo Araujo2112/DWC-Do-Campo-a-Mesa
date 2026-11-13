@@ -230,6 +230,46 @@ paths:
         '401': { $ref: '#/components/responses/NaoAutenticado' }
         '403': { $ref: '#/components/responses/SemPermissao' }
         '404': { $ref: '#/components/responses/NaoEncontrado' }
+  /products/{id}/imagem:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Produtos]
+      summary: Enviar a fotografia de um produto (produtor dono e validado)
+      description: O ficheiro vai para o storage da Cloud (Azure Blob Storage). Aceita JPEG, PNG e WebP até 5 MB; o tipo é verificado pelo conteúdo. Substitui a imagem anterior. O produto de outro produtor responde 404.
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [imagem]
+              properties:
+                imagem: { type: string, format: binary }
+      responses:
+        '200':
+          description: Imagem guardada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imagemUrl: { type: string, example: 'https://conta.blob.core.windows.net/produtos/6f1c….jpg' }
+        '400': { $ref: '#/components/responses/DadosInvalidos' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '413':
+          description: A imagem tem mais de 5 MB
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Erro' }
+        '502':
+          description: O storage não respondeu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Erro' }
   /producers/me:
     patch:
       tags: [Produtores]

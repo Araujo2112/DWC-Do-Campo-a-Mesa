@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotificacoes } from '../hooks/useNotificacoes.js';
+import { useCaixaDeNotificacoes } from '../context/NotificacoesContext.jsx';
 import EstadoEncomenda from '../components/EstadoEncomenda.jsx';
 import AvaliacoesDaEncomenda from '../components/AvaliacoesDaEncomenda.jsx';
 
@@ -38,6 +39,13 @@ export default function Encomendas() {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // O estado vem sempre da API: cada notificação (ou religação do socket) volta a pedi-lo.
+  const { versao } = useCaixaDeNotificacoes();
+  useEffect(() => {
+    if (versao > 0) carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [versao]);
 
   useNotificacoes(token, (evento, dados) => {
     if (evento === 'encomenda-atualizada') {

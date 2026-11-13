@@ -1,8 +1,10 @@
 // Formulário de produto (criar e editar), usado no painel do produtor
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const CATEGORIAS = ['Hortícolas', 'Fruta', 'Mel', 'Vinho', 'Queijo', 'Padaria', 'Outros'];
 const EPOCAS = ['Primavera', 'Verão', 'Outono', 'Inverno'];
+const TIPOS_IMAGEM = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_IMAGEM = 5 * 1024 * 1024; // o servidor recusa acima disto
 
 export default function ProdutoForm({ inicial, aGuardar, erro, onGuardar, onCancelar }) {
   const [d, setD] = useState({
@@ -14,6 +16,33 @@ export default function ProdutoForm({ inicial, aGuardar, erro, onGuardar, onCanc
     biologico: inicial?.biologico ?? false,
     epocas: inicial?.epocas ?? [],
   });
+
+  const [ficheiro, setFicheiro] = useState(null);
+  const [previa, setPrevia] = useState('');
+  const [erroImagem, setErroImagem] = useState('');
+
+  // A pré-visualização é um URL temporário do browser: liberta-se quando muda ou o formulário fecha.
+  useEffect(() => {
+    if (!ficheiro) { setPrevia(''); return undefined; }
+    const url = URL.createObjectURL(ficheiro);
+    setPrevia(url);
+    return () => URL.revokeObjectURL(url);
+  }, [ficheiro]);
+
+  function escolherImagem(e) {
+    const f = e.target.files[0];
+    setErroImagem('');
+    if (!f) return setFicheiro(null);
+    if (!TIPOS_IMAGEM.includes(f.type)) {
+      e.target.value = '';
+      return setErroImagem('A imagem tem de ser JPEG, PNG ou WebP.');
+    }
+    if (f.size > MAX_IMAGEM) {
+      e.target.value = '';
+      return setErroImagem('A imagem não pode ter mais de 5 MB.');
+    }
+    return setFicheiro(f);
+  }
 
   const atualizar = (campo) => (e) =>
     setD((x) => ({ ...x, [campo]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
@@ -34,7 +63,7 @@ export default function ProdutoForm({ inicial, aGuardar, erro, onGuardar, onCanc
       stock: parseInt(d.stock, 10) || 0,
       biologico: d.biologico,
       epocas: d.epocas,
-    });
+    }, ficheiro);
   }
 
   return (
@@ -79,6 +108,19 @@ export default function ProdutoForm({ inicial, aGuardar, erro, onGuardar, onCanc
               checked={d.biologico} onChange={atualizar('biologico')} />
             <label htmlFor="pf-bio" className="form-check-label">Produção biológica</label>
           </div>
+        </div>
+
+        <div className="col-12">
+          <label htmlFor="pf-imagem" className="form-label">Fotografia</label>
+          <div className="d-flex align-items-center gap-3">
+            {(previa || inicial?.imagemUrl) && (
+              <img src={previa || inicial.imagemUrl} alt="" className="miniatura-produto" />
+            )}
+            <input id="pf-imagem" type="file" className="form-control" accept={TIPOS_IMAGEM.join(',')}
+              onChange={escolherImagem} />
+          </div>
+          <div className="form-text">JPEG, PNG ou WebP, até 5 MB.</div>
+          {erroImagem && <div className="text-danger small mt-1" role="alert">{erroImagem}</div>}
         </div>
 
         <fieldset className="col-12">

@@ -7,7 +7,7 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const produtorValidado = require('../middleware/produtorValidado');
 const idValido = require('../middleware/idValido');
-const porFazer = require('./_naoImplementado');
+const { guardarImagem, apagarImagem, detectarTipo } = require('../services/imagens');
 const { mediasDosProdutos } = require('../services/avaliacoes');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -177,14 +177,47 @@ router.put('/:id', auth('produtor'), produtorValidado, idValido(), async (req, r
 // DELETE /api/products/:id  (produtor dono)  -> 204 | 400 | 404
 router.delete('/:id', auth('produtor'), produtorValidado, idValido(), async (req, res, next) => {
   try {
-    const r = await Product.deleteOne({ _id: req.params.id, produtor: req.user.id });
-    if (!r.deletedCount) return res.status(404).json({ erro: 'Produto não encontrado' });
+    const p = await Product.findOneAndDelete({ _id: req.params.id, produtor: req.user.id }).lean();
+    if (!p) return res.status(404).json({ erro: 'Produto não encontrado' });
+    apagarImagem(p.imagemUrl);
     res.status(204).end();
   } catch (err) { next(err); }
 });
 
-// POST /api/products/:id/imagem  (multipart, campo "imagem")  -> 200 { imagemUrl }
-// TODO (Passo 8): usar services/imagens.js para enviar req.file para o storage da Cloud
-router.post('/:id/imagem', auth('produtor'), produtorValidado, upload.single('imagem'), porFazer('Upload da imagem do produto'));
+// Erros do multer (tamanho, campo inesperado) viram respostas HTTP em vez de 500.
+function receberImagem(req, res, next) {
+  upload.single('imagem')(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ erro: 'A imagem não pode ter mais de 5 MB' });
+    if (err instanceof multer.MulterError) return res.status(400).json({ erro: 'Envia um só ficheiro no campo "imagem"' });
+    next(err);
+  });
+}
+
+// POST /api/products/:id/imagem  (multipart, campo "imagem")  -> 200 { imagemUrl } | 400 | 404 | 413 | 502
+router.post('/:id/imagem', auth('produtor'), produtorValidado, idValido(), receberImagem, async (req, res, next) => {
+  try {
+    // O filtro inclui o dono: o produto de outro produtor responde 404.
+    const p = await Product.findOne({ _id: req.params.id, produtor: req.user.id }).select('imagemUrl').lean();
+    if (!p) return res.status(404).json({ erro: 'Produto não encontrado' });
+    if (!req.file) return res.status(400).json({ erro: 'Envia o ficheiro no campo "imagem"' });
+
+    const tipo = detectarTipo(req.file.buffer);
+    if (!tipo) return res.status(400).json({ erro: 'A imagem tem de ser JPEG, PNG ou WebP' });
+
+    let imagemUrl;
+    try {
+      imagemUrl = await guardarImagem(req.file.buffer, tipo, `${req.protocol}://${req.get('host')}`);
+    } catch (err) {
+      console.error('Storage:', err);
+      return res.status(502).json({ erro: 'Não foi possível guardar a imagem. Tenta de novo.' });
+    }
+
+    const anterior = p.imagemUrl;
+    await Product.updateOne({ _id: p._id }, { imagemUrl });
+    apagarImagem(anterior); // já não é usada
+    res.json({ imagemUrl });
+  } catch (err) { next(err); }
+});
 
 module.exports = router;

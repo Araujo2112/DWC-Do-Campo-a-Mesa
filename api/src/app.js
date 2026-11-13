@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const errorHandler = require('./middleware/errorHandler');
+const { usaAzure, PASTA_LOCAL } = require('./services/imagens');
 
 const app = express();
 
@@ -38,6 +39,14 @@ app.use('/api/auctions', require('./routes/auctions'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', require('./routes/admin'));
+
+// Sem STORAGE_CONN as imagens ficam em disco e a API serve-as (só desenvolvimento).
+if (usaAzure()) {
+  console.log('Imagens: Azure Blob Storage');
+} else {
+  console.log('Imagens: pasta api/uploads (STORAGE_CONN vazia; só para desenvolvimento)');
+  app.use('/uploads', express.static(PASTA_LOCAL, { index: false, maxAge: '1y', immutable: true }));
+}
 
 app.use((req, res) => res.status(404).json({ erro: 'Recurso não encontrado' }));
 app.use(errorHandler);

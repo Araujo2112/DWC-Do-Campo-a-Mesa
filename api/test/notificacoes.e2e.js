@@ -134,22 +134,40 @@ describe('Notificações: quem recebe o quê', () => {
   });
 });
 
+// Produtor novo e já aprovado: recebe exatamente 1 notificação ("conta"). Como é só deste teste, nada do que
+// acontece no resto da base (ou numa sessão aberta no browser) lhe mexe na contagem.
+async function produtorAprovado(prefixo) {
+  const email = emailNovo(prefixo);
+  const reg = await pedir('POST', '/auth/registo', {
+    corpo: { nome: `Produtor ${prefixo}`, email, password: 'segredo123', papel: 'produtor', produtor: { nomeExploracao: `Quinta ${prefixo} ${unico}`, localidade: 'Vila Teste' } },
+  });
+  assert.equal(reg.status, 201, JSON.stringify(reg.json));
+  const v = await pedir('PATCH', `/admin/produtores/${reg.json.id}/validacao`, { corpo: { aprovado: true }, token: admin.token });
+  assert.equal(v.status, 200, JSON.stringify(v.json));
+  return entrar(email, 'segredo123');
+}
+
 describe('Notificações: marcar como lidas', () => {
   it('POST /lidas: 204 e naoLidas fica a 0; só afeta o próprio utilizador', async () => {
-    const antesAdmin = (await lista(admin.token)).json.naoLidas;
-    assert.ok((await lista(horta.token)).json.naoLidas > 0, 'A horta devia ter notificações por ler');
+    const a = await produtorAprovado('lidasA');
+    const b = await produtorAprovado('lidasB');
+    assert.equal((await lista(a.token)).json.naoLidas, 1);
+    assert.equal((await lista(b.token)).json.naoLidas, 1);
 
-    assert.equal((await pedir('POST', '/notifications/lidas', { token: horta.token })).status, 204);
+    assert.equal((await pedir('POST', '/notifications/lidas', { token: a.token })).status, 204);
 
-    const depois = await lista(horta.token);
-    assert.equal(depois.json.naoLidas, 0);
-    assert.ok(depois.json.itens.every((i) => i.lida));
-    assert.equal((await lista(admin.token)).json.naoLidas, antesAdmin);
+    const depoisA = await lista(a.token);
+    assert.equal(depoisA.json.naoLidas, 0);
+    assert.ok(depoisA.json.itens.length > 0 && depoisA.json.itens.every((i) => i.lida));
+    assert.equal((await lista(b.token)).json.naoLidas, 1, 'as notificações do outro utilizador ficam por ler');
   });
 
   it('cada utilizador só vê as suas notificações', async () => {
-    const a = new Set((await lista(tasca.token)).json.itens.map((i) => i.id));
-    const b = (await lista(horta.token)).json.itens.map((i) => i.id);
-    assert.ok(b.every((id) => !a.has(id)));
+    const a = await produtorAprovado('suasA');
+    const b = await produtorAprovado('suasB');
+    const idsA = new Set((await lista(a.token)).json.itens.map((i) => i.id));
+    const idsB = (await lista(b.token)).json.itens.map((i) => i.id);
+    assert.ok(idsA.size > 0 && idsB.length > 0);
+    assert.ok(idsB.every((id) => !idsA.has(id)));
   });
 });

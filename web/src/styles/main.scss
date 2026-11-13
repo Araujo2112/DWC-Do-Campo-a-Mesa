@@ -9,6 +9,7 @@
 .marca { font-family: Georgia, serif; font-weight: 700; color: $tinta; }
 .texto-secundario { color: $texto-secundario; }
 .nome-conta { max-width: 9rem; }
+.miniatura-produto { width: 3.5rem; height: 3.5rem; object-fit: cover; border-radius: .5rem; border: 1px solid $linha; flex: none; }
 
 .sino {
   &__menu { width: 22rem; max-width: calc(100vw - 2rem); }

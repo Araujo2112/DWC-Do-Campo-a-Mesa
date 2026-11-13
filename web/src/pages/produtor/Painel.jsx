@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useNotificacoes } from '../../hooks/useNotificacoes.js';
+import { useCaixaDeNotificacoes } from '../../context/NotificacoesContext.jsx';
 import { useContagem, formatarTempo } from '../../hooks/useContagem.js';
 import ProdutoForm from '../../components/ProdutoForm.jsx';
-import PorImplementar from '../../components/PorImplementar.jsx';
 
 const ESTADOS = ['pendente', 'confirmada', 'pronta', 'entregue'];
 const ACAO_SEGUINTE = {
@@ -70,6 +70,13 @@ export default function PainelProdutor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // O estado vem sempre da API: cada notificação (ou religação do socket) volta a pedi-lo.
+  const { versao } = useCaixaDeNotificacoes();
+  useEffect(() => {
+    if (versao > 0) carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [versao]);
+
   function avisar(texto) {
     setAvisos((lista) => [...lista.slice(-2), { id: Date.now() + Math.random(), texto }]);
   }
@@ -87,14 +94,25 @@ export default function PainelProdutor() {
     }
   });
 
-  async function guardar(dados) {
+  async function guardar(dados, ficheiro) {
     setErroForm('');
     setAGuardar(true);
     try {
-      if (emEdicao === 'novo') {
-        await api('/products', { metodo: 'POST', corpo: dados, token });
-      } else {
-        await api(`/products/${emEdicao._id}`, { metodo: 'PUT', corpo: dados, token });
+      const guardado = emEdicao === 'novo'
+        ? await api('/products', { metodo: 'POST', corpo: dados, token })
+        : await api(`/products/${emEdicao._id}`, { metodo: 'PUT', corpo: dados, token });
+
+      if (ficheiro) {
+        const form = new FormData();
+        form.append('imagem', ficheiro);
+        try {
+          await api(`/products/${guardado._id}/imagem`, { metodo: 'POST', corpo: form, token });
+        } catch (err) {
+          // O produto já existe: o formulário fica aberto, agora em modo de edição, para tentar a imagem outra vez.
+          await carregar();
+          setEmEdicao(guardado);
+          return falhou(err, (m) => setErroForm(`O produto foi guardado, mas a imagem falhou: ${m}`));
+        }
       }
       setEmEdicao(null);
       await carregar();
@@ -205,12 +223,15 @@ export default function PainelProdutor() {
           {produtos.map((p) => (
             <li key={p._id}
               className="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-              <div>
+              <div className="d-flex align-items-center gap-3">
+                {p.imagemUrl && <img src={p.imagemUrl} alt="" className="miniatura-produto" />}
+                <div>
                 <strong>{p.nome}</strong>{' '}
                 {p.biologico && <span className="badge text-bg-success">BIO</span>}
                 <div className="small text-muted">
                   {p.categoria} · {euro(p.preco)} / {p.unidade} · stock: {p.stock}{' '}
                   {p.stock <= STOCK_BAIXO && <span className="badge text-bg-warning">Stock baixo</span>}
+                </div>
                 </div>
               </div>
               <div className="d-flex gap-2">
@@ -288,8 +309,6 @@ export default function PainelProdutor() {
           ))}
         </ul>
       </section>
-
-      <PorImplementar passo={8}>upload de imagem dos produtos.</PorImplementar>
     </>
   );
 }
