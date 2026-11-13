@@ -65,4 +65,12 @@ async function apagarImagem(url) {
   }
 }
 
-module.exports = { guardarImagem, apagarImagem, detectarTipo, usaAzure, PASTA_LOCAL };
+// Para o painel do administrador: o contentor está acessível? (sem STORAGE_CONN é só um aviso)
+async function estadoStorage() {
+  if (!usaAzure()) return { estado: 'aviso', detalhe: 'Disco local (STORAGE_CONN vazia): só para desenvolvimento' };
+  const c = await obterContainer();
+  if (!(await c.exists())) throw new Error('contentor em falta');
+  return { detalhe: `Contentor "${c.containerName}" acessível`, medirLatencia: true };
+}
+
+module.exports = { guardarImagem, apagarImagem, detectarTipo, estadoStorage, usaAzure, PASTA_LOCAL };

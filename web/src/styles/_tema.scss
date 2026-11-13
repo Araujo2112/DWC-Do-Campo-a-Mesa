@@ -123,3 +123,13 @@ h3 { font-size: 1.15rem; }
   box-shadow: $sombra-elevada; padding: .4rem;
   .dropdown-item { border-radius: .5rem; padding: .5rem .75rem; }
 }
+
+// Estado dos serviços Cloud (administração)
+.grelha-servicos { @include colunas(1, 2, 3, 5); gap: .75rem; }
+.servico {
+  &__ponto { width: .65rem; height: .65rem; border-radius: 50%; flex: none; background: $texto-secundario; }
+  &__estado { font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: .35rem; }
+  &--ok { .servico__ponto { background: $verde; box-shadow: 0 0 0 4px rgba($verde, .18); } .servico__estado { color: $verde; } }
+  &--aviso { .servico__ponto { background: #D99A00; box-shadow: 0 0 0 4px rgba(#D99A00, .2); } .servico__estado { color: #9A6B00; } }
+  &--erro { .servico__ponto { background: #C0392B; box-shadow: 0 0 0 4px rgba(#C0392B, .2); } .servico__estado { color: #C0392B; } }
+}

@@ -6,8 +6,7 @@ info:
   version: 0.4.0
   description: API REST do mercado digital de produtores locais.
 servers:
-     - url: /api
-       description: Servidor atual (local ou Azure)
+  - url: http://localhost:3000/api
 tags:
   - name: Autenticação
     description: Registo, login e sessão
@@ -97,6 +96,23 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/EstatisticasAdmin' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /admin/servicos:
+    get:
+      tags: [Administração]
+      summary: Estado dos serviços Cloud
+      description: >
+        Verifica a API (App Service), o Socket.io, o MongoDB Atlas, o Blob Storage e o Swagger UI.
+        Cada verificação tem limite de 3 s e um serviço em baixo aparece com estado "erro", nunca como falha do pedido.
+        Sem STORAGE_CONN (desenvolvimento) o Blob Storage aparece com estado "aviso".
+      security: [ { bearerAuth: [] } ]
+      responses:
+        '200':
+          description: Estado de cada serviço
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EstadoServicos' }
         '401': { $ref: '#/components/responses/NaoAutenticado' }
         '403': { $ref: '#/components/responses/SemPermissao' }
   /admin/produtores/pendentes:
@@ -813,6 +829,20 @@ components:
         produtoresPorValidar: { type: integer }
         encomendasHoje: { type: integer }
         leiloesAtivos: { type: integer }
+    EstadoServicos:
+      type: object
+      properties:
+        verificadoEm: { type: string, format: date-time }
+        servicos:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, enum: [api, socketio, mongodb, blob, swagger] }
+              nome: { type: string }
+              estado: { type: string, enum: [ok, aviso, erro] }
+              detalhe: { type: string }
+              latenciaMs: { type: integer, description: Só nos serviços com chamada de rede (MongoDB, Blob Storage) }
     ProdutorResumo:
       type: object
       properties:

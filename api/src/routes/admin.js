@@ -8,6 +8,7 @@ const Auction = require('../models/Auction');
 const Review = require('../models/Review');
 const idValido = require('../middleware/idValido');
 const { notificar } = require('../services/notificacoes');
+const { verificarServicos } = require('../services/servicos');
 
 router.use(auth('admin'));
 
@@ -41,6 +42,16 @@ router.get('/estatisticas', async (req, res, next) => {
     ]);
 
     res.json({ utilizadores, produtores, produtoresPorValidar, encomendasHoje, leiloesAtivos });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/admin/servicos  -> 200 { verificadoEm, servicos: [{ id, nome, estado: ok|aviso|erro, detalhe, latenciaMs? }] }
+router.get('/servicos', async (req, res, next) => {
+  try {
+    const servicos = await verificarServicos(req.app);
+    res.json({ verificadoEm: new Date().toISOString(), servicos });
   } catch (err) {
     next(err);
   }

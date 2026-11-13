@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useContagem, formatarTempo } from '../../hooks/useContagem.js';
+import ServicosCloud from '../../components/ServicosCloud.jsx';
 
 const CONTADORES = [
   ['utilizadores', 'Utilizadores'],
@@ -206,6 +207,8 @@ export default function PainelAdmin() {
           ))}
         </ul>
       </section>
+
+      <ServicosCloud token={token} aoExpirar={sair} />
     </>
   );
 }

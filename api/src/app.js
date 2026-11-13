@@ -27,6 +27,7 @@ app.use(express.json({ limit: '100kb' }));
 
 // Passo 5: documentação OpenAPI em /api-docs
 const openapi = YAML.load(path.join(__dirname, '..', 'openapi.yaml'));
+app.set('openapi', openapi); // o painel do admin lê daqui o estado do Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
 app.get('/api/health', (req, res) => res.json({ estado: 'ok' }));
