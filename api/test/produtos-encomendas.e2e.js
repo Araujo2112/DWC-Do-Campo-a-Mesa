@@ -234,6 +234,40 @@ describe('Produtos: filtros e ordenação', () => {
   it('precoMin que não é número: 400', async () => {
     assert.equal((await pedir('GET', '/products?precoMin=abc')).status, 400);
   });
+
+  it('precoMax: só produtos com preço <= limite, e o valor exato entra ($lte)', async () => {
+    const nome = `PrecoMax${unico}`;
+    const barato = await criarProduto(horta, { nome: `${nome} barato`, preco: 1.5 });
+    const caro = await criarProduto(horta, { nome: `${nome} caro`, preco: 6 });
+    const r = await pedir('GET', `/products?q=${nome}&precoMax=1.5`);
+    assert.equal(r.status, 200);
+    const ids = r.json.map((p) => p._id);
+    assert.ok(ids.includes(barato._id), 'o preço igual ao limite tem de entrar');
+    assert.ok(!ids.includes(caro._id));
+    assert.ok(r.json.every((p) => p.preco <= 1.5));
+  });
+
+  it('precoMin e precoMax juntos: só o que está dentro do intervalo', async () => {
+    const nome = `Intervalo${unico}`;
+    const baixo = await criarProduto(horta, { nome: `${nome} baixo`, preco: 1 });
+    const meio = await criarProduto(horta, { nome: `${nome} meio`, preco: 3 });
+    const alto = await criarProduto(horta, { nome: `${nome} alto`, preco: 8 });
+    const r = await pedir('GET', `/products?q=${nome}&precoMin=2&precoMax=4`);
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.json.map((p) => p._id), [meio._id]);
+    assert.ok(baixo._id && alto._id);
+  });
+
+  it('q ($regex) + categoria: as condições somam-se (2 méis, sem a fruta)', async () => {
+    const nome = `Regex${unico}`;
+    const m1 = await criarProduto(horta, { nome: `${nome} mel A`, categoria: 'Mel' });
+    const m2 = await criarProduto(mel, { nome: `${nome} mel B`, categoria: 'Mel' });
+    await criarProduto(horta, { nome: `${nome} kiwi`, categoria: 'Fruta' });
+    const r = await pedir('GET', `/products?q=${nome}&categoria=Mel`);
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.json.map((p) => p._id).sort(), [m1._id, m2._id].sort());
+    assert.ok(r.json.every((p) => p.categoria === 'Mel'));
+  });
 });
 
 // ---------- produtores ----------

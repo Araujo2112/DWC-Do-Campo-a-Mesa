@@ -465,6 +465,50 @@ describe('Leilões: licitar', () => {
     const vistos = bids.map((b) => b.valor);
     assert.equal(new Set(vistos).size, vistos.length, 'não há duas licitações com o mesmo valor');
     assert.deepEqual(vistos, [...vistos].sort((x, y) => y - x));
+    // Cada aceite tem de superar a anterior em, pelo menos, o incremento (5); a primeira, o preço base + incremento
+    const cronologico = [...vistos].reverse();
+    let anterior = 50;
+    for (const v of cronologico) {
+      assert.ok(v >= anterior + 5, `${v} não supera ${anterior} em pelo menos o incremento`);
+      anterior = v;
+    }
+  });
+
+  it('rajada de 10 compradores com valores diferentes: aceites = registadas e cada uma >= anterior + incremento', async () => {
+    const a = await criarLeilao(); // base 50, incremento 5
+    const compradores = [tasca];
+    while (compradores.length < 10) compradores.push(await novoComprador());
+    const valores = [55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
+    const ss = [];
+    const vistas = new Map(); // valores aceites que cada cliente recebeu
+    let recusadas = 0;
+    for (const c of compradores) {
+      const s = await ligar(c.token);
+      vistas.set(s, []);
+      s.on('nova-licitacao', (n) => vistas.get(s).push(n.valor));
+      s.on('recusada', () => { recusadas += 1; });
+      await entrarNaSala(s, a.id);
+      ss.push(s);
+    }
+
+    ss.forEach((s, i) => s.emit('licitar', { leilaoId: a.id, valor: valores[i] }));
+
+    // 100 nunca é recusada (o valor atual nunca passa de 95), por isso é o estado final de todos
+    await esperarCondicao(() => ss.every((s) => vistas.get(s).includes(100)), 10_000);
+    await pausa(300);
+
+    const l = await leilaoNaApi(a.id);
+    const bids = (await pedir('GET', `/auctions/${a.id}/bids`)).json;
+    assert.equal(l.licitacaoAtual.valor, 100);
+    assert.equal(bids.length, l.numLicitacoes, 'o histórico bate com o contador atómico');
+    assert.equal(bids.length + recusadas, 10, 'cada pedido foi aceite ou recusado, nenhum se perdeu');
+    for (const s of ss) assert.equal(vistas.get(s).length, bids.length, 'todos os clientes viram as mesmas aceites');
+
+    let anterior = 50;
+    for (const v of bids.map((b) => b.valor).sort((x, y) => x - y)) {
+      assert.ok(v >= anterior + 5, `${v} não supera ${anterior} em pelo menos o incremento`);
+      anterior = v;
+    }
   });
 });
 
