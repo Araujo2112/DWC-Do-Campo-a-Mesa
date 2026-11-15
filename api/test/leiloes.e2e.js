@@ -57,7 +57,7 @@ let horta, mel, tasca;
 async function criarLeilao(extra = {}) {
   const r = await pedir('POST', '/auctions', {
     token: horta.token,
-    corpo: { lote: `Lote de teste ${++contador}`, precoBase: 50, incremento: 5, duracaoMinutos: 10, ...extra },
+    corpo: { lote: `Lote de teste ${unico}-${++contador}`, precoBase: 50, incremento: 5, duracaoMinutos: 10, ...extra },
   });
   assert.equal(r.status, 201, JSON.stringify(r.json));
   return r.json;
@@ -357,6 +357,7 @@ describe('Leilões: licitar', () => {
     await entrarNaSala(s, a.id);
 
     assert.match(await licitarRecusada(s, a.id, 54.99), /55\.00/);
+    await pausa(300);
     assert.match(await licitarRecusada(s, a.id, 50), /55\.00/);
 
     await pausa(300);
